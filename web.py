@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Doosan M0609 Robot Bar</title>
+    <!-- ROS 라이브러리 (원본 유지) -->
+    <script src="https://jsdelivr.net"></script>
+    <style>
+        /* [원본 디자인 및 변수 100% 유지] */
+        :root { --ds-blue: #005eb8; --ds-yellow: #ffcb05; --ds-red: #e63946; }
+        body { font-family: 'Pretendard', 'Malgun Gothic', sans-serif; margin: 0; background: #fff; color: #333; scroll-behavior: smooth; }
+        
+        /* 로딩 화면 */
+        #loading-screen { position: fixed; top:0; left:0; width:100%; height:100%; background:white; z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .spinner { width: 50px; height: 50px; border: 5px solid #eee; border-top: 5px solid var(--ds-blue); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        header { background: white; padding: 15px 30px; border-bottom: 1px solid #eee; position: sticky; top:0; z-index: 1000; }
+        .nav-top { font-size: 12px; color: #999; display: flex; gap: 15px; margin-bottom: 5px; justify-content: flex-end; }
+        .nav-main { display: flex; gap: 20px; font-weight: bold; align-items: center; justify-content: center; }
+        .logo { color: var(--ds-blue); font-size: 22px; cursor: pointer; }
+        .nav-item { cursor: pointer; transition: 0.2s; text-decoration: none; color: inherit; }
+
+        /* 섹션 제어 (소개, Q&A용) */
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        .hero { height: 90vh; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; background: #f8f9fa; }
+        .robot-circle { width: 420px; height: 420px; border-radius: 50%; background: #ddd; border: 10px solid white; box-shadow: 0 15px 40px rgba(0,0,0,0.1); margin-bottom: 20px; display: flex; align-items: center; justify-content: center; }
+        .btn-greet { position: absolute; left: 10%; top: 50%; width: 100px; height: 100px; border-radius: 50%; background: white; border: 3px solid var(--ds-blue); color: var(--ds-blue); font-weight: bold; cursor: pointer; }
+        .btn-start { padding: 25px 100px; font-size: 26px; font-weight: bold; color: white; background: var(--ds-blue); border: none; border-radius: 60px; cursor: pointer; }
+
+        /* 시그니처 메뉴 섹션 복구 */
+        .menu-detail-section { padding: 100px 50px; background: white; text-align: center; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 50px; }
+        .menu-card { padding: 20px; border-radius: 20px; background: #fafafa; border: 1px solid #eee; transition: 0.3s; text-align: left; }
+        .menu-img-placeholder { width: 100%; height: 200px; background: #eee; border-radius: 15px; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+
+        /* 모달 스타일 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; align-items: center; justify-content: center; }
+        .modal-content { background: white; width: 450px; padding: 40px; border-radius: 30px; text-align: center; position: relative; }
+        .close-x { position: absolute; top: 20px; right: 25px; font-size: 30px; cursor: pointer; border: none; background: none; color: #aaa; }
+        .step { display: none; } .step.active { display: block; }
+        .opt-btn { width: 100%; padding: 18px; margin: 10px 0; border: 1px solid #ddd; border-radius: 12px; font-size: 18px; cursor: pointer; background: white; }
+        
+        .progress-container { width: 100%; background: #eee; border-radius: 20px; height: 30px; margin: 25px 0; overflow: hidden; border: 2px solid transparent; }
+        .progress-bar { width: 0%; height: 100%; background: var(--ds-blue); transition: 0.4s; }
+        .error .progress-bar { background: var(--ds-red) !important; width: 100% !important; }
+        #status-msg { font-size: 20px; font-weight: bold; margin-bottom: 10px; }
+
+        footer { background: #222; color: #bbb; padding: 60px 50px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; gap: 30px; font-size: 13px; }
+    </style>
+</head>
+<body onload="document.getElementById('loading-screen').style.display='none'">
+
+    <!-- [추가] 로딩 화면 -->
+    <div id="loading-screen">
+        <div class="spinner"></div>
+        <p style="margin-top:20px; font-weight:bold;">로딩 중 입니다 기다려주십시오</p>
+    </div>
+
+    <header>
+        <div class="nav-top">
+            <span class="nav-item" onclick="openAuth('loginStep')">로그인</span>
+            <span class="nav-item" onclick="openAuth('joinStep')">회원가입</span>
+            <span class="nav-item" onclick="showPage('aboutPage')">소개</span>
+            <span class="nav-item" onclick="showPage('qnaPage')">Q&A</span>
+        </div>
+        <div class="nav-main">
+            <div class="logo" onclick="showPage('mainPage')">LOKIBAR STORY</div>
+            <span class="nav-item" onclick="showPage('mainPage')">로키바 스토리</span>
+            <span class="nav-item" onclick="showPage('mainPage', true)">메뉴소개</span>
+        </div>
+    </header>
+
+    <!-- [메인 페이지] -->
+    <div id="mainPage" class="content-section active">
+        <section class="hero">
+            <button class="btn-greet" onclick="robotGreet()">👋<br>로봇 인사</button>
+            <div class="robot-circle">LOKIBAR ROBOT</div>
+            <button class="btn-start" onclick="openOrder()">지금 주문하기</button>
+        </section>
+
+        <section class="menu-detail-section" id="menu-section">
+            <h1>LOKIBAR Signature Menu</h1>
+            <div class="menu-grid">
+                <div class="menu-card"><div class="menu-img-placeholder">🍃</div><h3>MOJITO</h3><p>상쾌한 라임과 민트의 클래식 칵테일.</p></div>
+                <div class="menu-card"><div class="menu-img-placeholder">🌅</div><h3>TEQUILA SUNRISE</h3><p>오렌지의 달콤함과 데킬라의 조화.</p></div>
+                <div class="menu-card"><div class="menu-img-placeholder">🌌</div><h3>GALAXY COCKTAIL</h3><p>보라와 블루가 어우러진 시그니처.</p></div>
+            </div>
+        </section>
+    </div>
+
+    <!-- [소개 페이지] -->
+    <div id="aboutPage" class="content-section" style="padding:100px; text-align:center;">
+        <h2>로키바 스토리 소개</h2>
+        <p>LOKIBAR STORY는 정밀 로봇이 제조하는 프리미엄 바입니다.</p>
+        <button class="opt-btn" style="width:200px;" onclick="showPage('mainPage')">메인으로 가기</button>
+    </div>
+
+    <!-- [Q&A 페이지] -->
+    <div id="qnaPage" class="content-section" style="padding:100px; max-width:800px; margin:0 auto;">
+        <h2>자주 묻는 질문 (Q&A)</h2>
+        <p><strong>Q. 논 알콜에 조금이라도 알콜이 들어가나요?</strong></p>
+        <p>A. 로키바의 논알콜 메뉴는 0.00% 완전 무알콜 원료만을 사용합니다.</p>
+        <div style="background:#f4f4f4; padding:20px; border-radius:15px; margin-top:30px;">
+            <h3>고객 소리함</h3>
+            <textarea style="width:100%; height:100px; border:1px solid #ddd;"></textarea>
+            <button class="opt-btn" style="width:100px;" onclick="alert('접수되었습니다.')">보내기</button>
+        </div>
+        <center><button class="opt-btn" style="width:200px; margin-top:30px;" onclick="showPage('mainPage')">메인으로 가기</button></center>
+    </div>
+
+    <!-- [통합 모달] -->
+    <div id="mainModal" class="modal">
+        <div class="modal-content">
+            <button class="close-x" onclick="closeModal()">&times;</button>
+            
+            <div id="loginStep" class="step">
+                <h2>로그인</h2>
+                <input type="text" class="opt-btn" placeholder="아이디" style="text-align:left;">
+                <input type="password" class="opt-btn" placeholder="비밀번호" style="text-align:left;">
+                <button class="opt-btn" style="background:#000; color:#fff;" onclick="alert('로그인 시도')">로그인</button>
+            </div>
+            
+            <div id="joinStep" class="step">
+                <h2>회원가입</h2>
+                <input type="text" class="opt-btn" placeholder="아이디 입력" style="text-align:left;">
+                <input type="email" class="opt-btn" placeholder="이메일 주소" style="text-align:left;">
+                <button class="opt-btn" style="background:#555; color:#fff;" onclick="alert('가입 시도')">가입하기</button>
+            </div>
+
+            <!-- 주문 프로세스 5단계 (무조건 넘어가는 로직) -->
+            <div id="orderStep1" class="step">
+                <h3>🍸 1. 메뉴 선택</h3>
+                <button class="opt-btn" onclick="nextOrder(2, 'MOJITO')">MOJITO</button>
+                <button class="opt-btn" onclick="nextOrder(2, 'TEQUILA SUNRISE')">TEQUILA SUNRISE</button>
+                <button class="opt-btn" onclick="nextOrder(2, 'GALAXY COCKTAIL')">GALAXY COCKTAIL</button>
+            </div>
+            <div id="orderStep2" class="step">
+                <h3>🍹 2. 옵션 선택</h3>
+                <button class="opt-btn" onclick="nextOrder(3, 'Alcohol')">알콜 추가</button>
+                <button class="opt-btn" onclick="nextOrder(3, 'Non-Alcohol')">논알콜</button>
+            </div>
+            <div id="orderStep3" class="step">
+                <h3>🏠 3. 이용 방식</h3>
+                <button class="opt-btn" onclick="nextOrder(4, '매장 이용')">매장 이용</button>
+                <button class="opt-btn" onclick="nextOrder(4, '포장 주문')">포장 주문</button>
+            </div>
+            <div id="orderStep4" class="step">
+                <h3>💳 4. 결제 수단</h3>
+                <button class="opt-btn" onclick="nextOrder(5, '신용카드')">신용카드</button>
+                <button class="opt-btn" onclick="nextOrder(5, '현금 결제')">현금/기타</button>
+            </div>
+            <div id="orderStep5" class="step">
+                <h3>✅ 5. 주문 세부내역 확인</h3>
+                <div id="summary-box" style="padding:15px; background:#f9f9f9; border-radius:10px; margin-bottom:15px;">내용을 불러오는 중...</div>
+                <button class="opt-btn" style="background:#000; color:white;" onclick="nextOrder(6)">결제 완료 및 제조 시작</button>
+            </div>
+            <div id="orderStep6" class="step">
+                <div id="status-wrapper">
+                    <div id="status-msg">제조를 시작합니다</div>
+                    <div class="progress-container"><div id="p-bar" class="progress-bar"></div></div>
+                    <p id="p-percent">0%</p>
+                </div>
+                <button class="opt-btn" onclick="location.reload()" id="closeBtn" style="display:none;">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="footer-col"><div class="footer-logo">LOKIBAR GC</div><p>주식회사 로키바스토리</p></div>
+    </footer>
+
+    <script>
+        // 에러 방지를 위해 간단하게 작성
+        let basket = {};
+
+        function showPage(id, scroll = false) {
+            const sections = document.getElementsByClassName('content-section');
+            for(let s of sections) { s.classList.remove('active'); }
+            document.getElementById(id).classList.add('active');
+            if(scroll) setTimeout(() => document.getElementById('menu-section').scrollIntoView(), 100);
+        }
+
+        function openOrder() { 
+            document.getElementById('mainModal').style.display = 'flex'; 
+            showStep('orderStep1'); 
+        }
+        
+        function openAuth(id) { 
+            document.getElementById('mainModal').style.display = 'flex'; 
+            showStep(id); 
+        }
+
+        function closeModal() { document.getElementById('mainModal').style.display = 'none'; }
+        
+        function showStep(id) {
+            const steps = document.getElementsByClassName('step');
+            for(let s of steps) { s.classList.remove('active'); }
+            document.getElementById(id).classList.add('active');
+        }
+
+        function nextOrder(n, val) {
+            if(val) {
+                if(n === 2) basket.menu = val;
+                if(n === 3) basket.opt = val;
+                if(n === 4) basket.type = val;
+                if(n === 5) {
+                    basket.pay = val;
+                    document.getElementById('summary-box').innerHTML = `<b>${basket.menu}</b> (${basket.opt})<br>${basket.type} / ${basket.pay}`;
+                }
+            }
+            showStep('orderStep' + n);
+            if(n === 6) startProduction();
+        }
+
+        function startProduction() {
+            const pBar = document.getElementById('p-bar');
+            const statusMsg = document.getElementById('status-msg');
+            let progress = 0;
+            statusMsg.innerText = "제조를 시작합니다";
+            const interval = setInterval(() => {
+                progress += 5;
+                pBar.style.width = progress + "%";
+                document.getElementById('p-percent').innerText = progress + "%";
+                if(progress > 10 && progress < 95) statusMsg.innerText = "제조중입니다!";
+                if(progress >= 100) {
+                    clearInterval(interval);
+                    statusMsg.innerText = "제조를 완료 했습니다!";
+                    document.getElementById('closeBtn').style.display = 'block';
+                }
+            }, 100);
+        }
+
+        function robotGreet() { alert("로봇에서 인사를 했습니다!"); }
+    </script>
+</body>
+</html>
