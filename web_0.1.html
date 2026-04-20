@@ -4,7 +4,71 @@
     <meta charset="UTF-8">
     <title>Doosan M0609 Robot Bar</title>
     <!-- ROS 라이브러리 (원본 유지) -->
-    <script src="https://jsdelivr.net"></script>
+    <script src="https://cdn.jsdelivr.net/npm/roslib/build/roslib.min.js"></script>
+
+    <script>
+    const ros = new ROSLIB.Ros({
+        url: "ws://localhost:9090"
+    });
+
+    ros.on('connection', () => console.log("ROS 연결됨"));
+    ros.on('error', (err) => console.log("ROS 에러:", err));
+    ros.on('close', () => console.log("ROS 연결 종료"));
+    
+    const cmdTopic = new ROSLIB.Topic({
+        ros: ros,
+        name: '/dsr01/robot_cmd',
+        messageType: 'std_msgs/String'
+    });
+
+    const statusTopic = new ROSLIB.Topic({
+    ros: ros,
+    name: '/dsr01/robot_pub',
+    messageType: 'std_msgs/String'
+    });
+
+    statusTopic.subscribe(function(message) {
+
+        // ❗ 주문 안했으면 무시
+        if (!isProducing) return;
+
+        console.log("ROS에서 받은 데이터:", message.data);
+
+        const data = JSON.parse(message.data);
+
+        const step = data.process;
+        const progress = data.progress;
+
+        const pBar = document.getElementById('p-bar');
+        const statusMsg = document.getElementById('status-msg');
+
+        if (!pBar || !statusMsg) return;
+
+        // 진행률 반영
+        pBar.style.width = progress + "%";
+        document.getElementById('p-percent').innerText = progress + "%";
+
+        const stepMap = {
+            cup1: "컵 1 준비중",
+            cup2: "컵 2 준비중",
+            cup3: "컵 3 준비중",
+            close_lid: "뚜껑 닫는 중",
+            shaking: "쉐이킹 중",
+            open_lid: "뚜껑 여는 중",
+            last_pouring: "마무리 따르는 중",
+            done: "제조 완료!"
+        };
+
+        statusMsg.innerText = stepMap[step] || step;
+
+        if (step === "done") {
+            document.getElementById('closeBtn').style.display = 'block';
+            isProducing = false;   // 🔥 끝나면 다시 OFF
+        }
+    });
+
+    </script>
+
     <style>
         /* [원본 디자인 및 변수 100% 유지] */
         :root { --ds-blue: #005eb8; --ds-yellow: #ffcb05; --ds-red: #e63946; }
@@ -175,6 +239,7 @@
     <script>
         // 에러 방지를 위해 간단하게 작성
         let basket = {};
+        let isProducing = false;
 
         function showPage(id, scroll = false) {
             const sections = document.getElementsByClassName('content-section');
@@ -215,25 +280,37 @@
             if(n === 6) startProduction();
         }
 
-        function startProduction() {
-            const pBar = document.getElementById('p-bar');
-            const statusMsg = document.getElementById('status-msg');
-            let progress = 0;
-            statusMsg.innerText = "제조를 시작합니다";
-            const interval = setInterval(() => {
-                progress += 5;
-                pBar.style.width = progress + "%";
-                document.getElementById('p-percent').innerText = progress + "%";
-                if(progress > 10 && progress < 95) statusMsg.innerText = "제조중입니다!";
-                if(progress >= 100) {
-                    clearInterval(interval);
-                    statusMsg.innerText = "제조를 완료 했습니다!";
-                    document.getElementById('closeBtn').style.display = 'block';
-                }
-            }, 100);
-        }
+    function startProduction() {
+
+        // 🔥 ROS로 주문 보내기
+        isProducing = true
+        const msg = new ROSLIB.Message({
+            data: JSON.stringify(basket)   // 👉 주문 정보 통째로 보냄
+        });
+        cmdTopic.publish(msg);
+        console.log("ROS로 주문 전송:", basket);
+
+
+        // 기존 UI 진행바 유지
+        const pBar = document.getElementById('p-bar');
+        const statusMsg = document.getElementById('status-msg');
+        let progress = 0;
+
+        statusMsg.innerText = "제조를 시작합니다";
+    }
 
         function robotGreet() { alert("로봇에서 인사를 했습니다!"); }
     </script>
+
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
