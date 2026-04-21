@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADC Rokey Bar</title>
+    
+    <style>
+        /* ─── CSS Variables ─── */
+        :root {
+            --bg:      #061a14;
+            --bg-card: #0a241d;
+            --gold:    #D4AF37;
+            --silver:  #d4d9d4;
+            --sage:    #88a096;
+            --glow:    rgba(136,160,150,0.2);
+            --radius:  20px;
+        }
+
+        /* ─── Reset & Base ─── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', 'Malgun Gothic', sans-serif;
+            background: var(--bg);
+            color: var(--silver);
+            scroll-behavior: smooth;
+        }
+        img { display: block; max-width: 100%; }
+        button { font-family: inherit; cursor: pointer; }
+
+        /* ─── Loading Screen ─── */
+        #loading-screen {
+            position: fixed; inset: 0;
+            background: var(--bg);
+            z-index: 9999;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 20px;
+        }
+        .spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(212,175,55,0.2);
+            border-top-color: var(--gold);
+            border-radius: 50%;
+            animation: spin 0.9s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── Header ─── */
+        header {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(6,26,20,0.95);
+            border-bottom: 1px solid var(--glow);
+            backdrop-filter: blur(10px);
+            padding: 14px 40px;
+        }
+        .nav-top {
+            display: flex; justify-content: flex-end; gap: 18px;
+            font-size: 12px; color: var(--sage);
+            margin-bottom: 8px;
+        }
+        .nav-top span { cursor: pointer; transition: color .2s; }
+        .nav-top span:hover { color: var(--gold); }
+        .nav-main {
+            display: flex; align-items: center; justify-content: center; gap: 36px;
+        }
+        .logo {
+            font-size: 22px; font-weight: 900; letter-spacing: 1px;
+            color: var(--gold); cursor: pointer;
+        }
+        .nav-item {
+            font-size: 14px; font-weight: 600; color: var(--silver);
+            cursor: pointer; transition: color .2s;
+        }
+        .nav-item:hover { color: var(--gold); }
+
+        /* ─── Page Sections ─── */
+        .page { display: none; }
+        .page.active { display: block; }
+
+        /* ─── Hero ─── */
+        .hero {
+            min-height: 90vh;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 32px;
+            position: relative;
+            background: radial-gradient(ellipse at 50% 60%, rgba(136,160,150,0.08) 0%, transparent 70%);
+        }
+        .robot-circle {
+            width: 380px; height: 380px; border-radius: 50%;
+            background: #081f19;
+            border: 1px solid var(--sage);
+            box-shadow: 0 0 60px var(--glow);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; letter-spacing: 3px; color: var(--sage);
+        }
+        .btn-greet {
+            position: absolute; left: 10%; top: 50%; transform: translateY(-50%);
+            width: 100px; height: 100px; border-radius: 50%;
+            background: white; border: 3px solid var(--bg-card);
+            color: var(--bg); font-weight: bold; font-size: 13px;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .btn-greet:hover { transform: translateY(-50%) scale(1.05); box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+        .btn-start {
+            padding: 20px 80px; font-size: 20px; font-weight: 700;
+            color: var(--bg); background: var(--gold);
+            border: none; border-radius: 60px;
+            letter-spacing: 0.5px;
+            transition: transform .2s, box-shadow .2s;
+        }
+        .btn-start:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(212,175,55,0.3); }
+
+        /* ─── Menu Section (landing page) ─── */
+        .menu-section { padding: 80px 20px; }
+        .menu-card {
+            background: #f4f4f4;
+            max-width: 960px; margin: 0 auto 50px;
+            padding: 48px; border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+        .menu-card-inner {
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 40px;
+        }
+        .menu-card-text { flex: 1.2; }
+        .menu-card-img { flex: 0.8; text-align: right; }
+        .menu-card-img img {
+            max-width: 300px; width: 100%;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.15));
+        }
+        .gold-title {
+            font-size: 3rem; font-weight: 900; color: #000;
+            background: linear-gradient(to bottom, transparent 65%, var(--gold) 35%);
+            display: inline-block; margin-bottom: 16px;
+        }
+        .menu-card-text h3 { color: #222; font-size: 1.3rem; margin-bottom: 10px; }
+        .menu-card-text p  { color: #666; font-size: 1.05rem; line-height: 1.7; }
+        .detail-btn {
+            margin-top: 24px; padding: 12px 32px;
+            background: var(--gold); color: #fff;
+            border: none; border-radius: 8px; font-weight: 700;
+            transition: opacity .2s;
+        }
+        .detail-btn:hover { opacity: 0.85; }
+
+        /* ─── News Section ─── */
+        .news-section { padding: 80px 20px; }
+        .news-box {
+            max-width: 960px; margin: 0 auto;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(212,175,55,0.25);
+            border-radius: 28px; padding: 48px;
+        }
+        .news-inner { display: flex; gap: 40px; align-items: center; margin-top: 24px; }
+        .news-inner img { max-width: 380px; width: 100%; border-radius: 14px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .news-text h3 { color: var(--gold); font-size: 1.6rem; margin-bottom: 16px; }
+        .news-text p  { color: #ccc; line-height: 1.8; }
+
+        /* ─── Simple Inner Pages ─── */
+        .inner-page { padding: 80px 40px; max-width: 800px; margin: 0 auto; }
+        .inner-page h2 { color: var(--gold); margin-bottom: 24px; }
+        .inner-page p  { color: var(--silver); line-height: 1.8; margin-bottom: 14px; }
+        .back-btn {
+            margin-top: 32px; padding: 14px 40px;
+            background: transparent; border: 1px solid var(--sage);
+            color: var(--sage); border-radius: 10px; font-weight: 600;
+            transition: background .2s, color .2s;
+        }
+        .back-btn:hover { background: var(--sage); color: var(--bg); }
+        .qna-box {
+            background: rgba(255,255,255,0.04); border-radius: 14px;
+            padding: 24px; margin-top: 32px;
+        }
+        .qna-box h3 { color: var(--silver); margin-bottom: 14px; }
+        .qna-box textarea {
+            width: 100%; height: 100px; padding: 12px;
+            background: rgba(255,255,255,0.06); border: 1px solid var(--glow);
+            border-radius: 10px; color: var(--silver); resize: vertical;
+        }
+        .send-btn {
+            margin-top: 12px; padding: 10px 28px;
+            background: var(--gold); color: var(--bg);
+            border: none; border-radius: 8px; font-weight: 700;
+        }
+
+        /* ─── Order Modal ─── */
+        #orderModal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 5000;
+            align-items: center; justify-content: center;
+        }
+        #orderModal.open { display: flex; }
+        .order-box {
+            background: var(--bg-card);
+            width: 95%; max-width: 1080px; height: 85vh;
+            border-radius: 28px;
+            border: 1px solid var(--glow);
+            display: flex; flex-direction: row;
+            position: relative; overflow: hidden;
+        }
+        .close-btn {
+            position: absolute; top: 18px; right: 26px;
+            background: none; border: none;
+            color: var(--silver); font-size: 28px; z-index: 10;
+        }
+        .close-btn:hover { color: var(--gold); }
+
+        /* Left: menu panel */
+        .menu-panel {
+            flex: 1.8; padding: 32px; overflow-y: auto;
+            border-right: 1px solid rgba(255,255,255,0.08);
+        }
+        .panel-title {
+            color: var(--gold); font-size: 1.4rem; font-weight: 700;
+            border-left: 4px solid var(--gold); padding-left: 14px;
+            margin-bottom: 24px;
+        }
+
+        /* Step A: pick cocktail */
+        #stepCocktail { display: block; }
+        .cocktail-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        .c-card {
+            background: rgba(255,255,255,0.05);
+            border: 2px solid transparent;
+            border-radius: var(--radius); padding: 14px;
+            text-align: center; cursor: pointer;
+            transition: border-color .2s, background .2s;
+        }
+        .c-card:hover { border-color: var(--gold); background: rgba(255,255,255,0.09); }
+        .c-card img { width: 100%; border-radius: 10px; margin-bottom: 10px; height: 130px; object-fit: cover; }
+        .c-card .c-name { color: #fff; font-weight: 600; font-size: 14px; }
+        .c-card .c-price { color: var(--gold); font-size: 13px; margin-top: 4px; }
+
+        /* Step B: pick alcohol option */
+        #stepAlcohol { display: none; }
+        .step-back {
+            background: none; border: none; color: var(--sage);
+            font-size: 14px; margin-bottom: 20px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .step-back:hover { color: var(--silver); }
+        .selected-preview {
+            background: rgba(212,175,55,0.1);
+            border: 1px solid rgba(212,175,55,0.3);
+            border-radius: 12px; padding: 16px 20px;
+            margin-bottom: 28px;
+            display: flex; align-items: center; gap: 16px;
+        }
+        .selected-preview img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; }
+        .selected-preview .prev-name { color: var(--gold); font-weight: 700; font-size: 16px; }
+        .selected-preview .prev-price { color: var(--silver); font-size: 13px; margin-top: 3px; }
+        .alcohol-options { display: flex; flex-direction: column; gap: 14px; }
+        .alc-btn {
+            width: 100%; padding: 22px 24px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius); color: var(--silver);
+            font-size: 16px; font-weight: 600; text-align: left;
+            display: flex; align-items: center; gap: 14px;
+            transition: border-color .2s, background .2s;
+        }
+        .alc-btn:hover { border-color: var(--gold); background: rgba(255,255,255,0.09); }
+        .alc-btn .alc-icon { font-size: 26px; }
+        .alc-btn .alc-label { display: flex; flex-direction: column; gap: 3px; }
+        .alc-btn .alc-label small { color: var(--sage); font-size: 12px; font-weight: 400; }
+
+        /* Right: cart panel */
+        .cart-panel {
+            flex: 1; padding: 32px;
+            display: flex; flex-direction: column;
+            background: rgba(255,255,255,0.02);
+        }
+        .cart-title {
+            color: var(--gold); font-size: 1.1rem; font-weight: 700;
+            border-bottom: 1px solid rgba(212,175,55,0.25);
+            padding-bottom: 14px; margin-bottom: 18px;
+        }
+        #cartList { flex: 1; overflow-y: auto; }
+        #cartList .empty-msg { color: var(--sage); text-align: center; margin-top: 40px; font-size: 14px; }
+        .cart-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+            font-size: 14px; color: var(--silver);
+        }
+        .cart-item-info { display: flex; flex-direction: column; gap: 3px; }
+        .cart-item-info small { color: var(--sage); font-size: 12px; }
+        .cart-remove {
+            background: none; border: none;
+            color: #ff6b6b; font-size: 18px; padding: 0 4px;
+            transition: transform .15s;
+        }
+        .cart-remove:hover { transform: scale(1.2); }
+        .cart-footer { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; margin-top: 12px; }
+        .cart-total {
+            display: flex; justify-content: space-between;
+            font-weight: 700; font-size: 1.1rem; margin-bottom: 18px;
+        }
+        .cart-total span:last-child { color: var(--gold); }
+        .pay-btn {
+            width: 100%; padding: 18px;
+            background: var(--gold); color: var(--bg);
+            border: none; border-radius: var(--radius);
+            font-weight: 700; font-size: 15px;
+            transition: opacity .2s;
+        }
+        .pay-btn:hover { opacity: 0.88; }
+
+        /* Step C: ice level */
+        #stepIce { display: none; }
+        .ice-options { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+        .ice-btn {
+            width: 100%; padding: 18px 24px;
+            background: rgba(255,255,255,0.05);
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: var(--radius); color: var(--silver);
+            font-size: 15px; font-weight: 600; text-align: left;
+            display: flex; align-items: center; gap: 14px;
+            transition: border-color .2s, background .2s;
+        }
+        .ice-btn:hover { border-color: #a0d8ef; background: rgba(160,216,239,0.06); }
+        .ice-btn.selected { border-color: #a0d8ef; background: rgba(160,216,239,0.1); }
+        .ice-icon { font-size: 22px; }
+        .ice-label { display: flex; flex-direction: column; gap: 2px; }
+        .ice-label small { color: var(--sage); font-size: 12px; font-weight: 400; }
+
+        /* Cart quantity controls */
+        .cart-qty {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .qty-btn {
+            width: 24px; height: 24px; border-radius: 50%;
+            border: 1px solid var(--sage); background: transparent;
+            color: var(--silver); font-size: 16px; line-height: 1;
+            display: flex; align-items: center; justify-content: center;
+            transition: background .15s;
+        }
+        .qty-btn:hover { background: var(--sage); color: var(--bg); }
+        .qty-num { color: var(--gold); font-weight: 700; min-width: 20px; text-align: center; }
+
+        /* Payment modal */
+        #payModal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.88); z-index: 6000;
+            align-items: center; justify-content: center;
+        }
+        #payModal.open { display: flex; }
+        .pay-box {
+            background: var(--bg-card);
+            width: 90%; max-width: 380px;
+            border-radius: 24px; padding: 40px;
+            border: 2px solid var(--gold);
+            text-align: center;
+        }
+        .pay-box h2 { color: var(--gold); font-size: 1.4rem; margin-bottom: 8px; }
+        .pay-box p  { color: var(--sage); font-size: 13px; margin-bottom: 28px; }
+        .pay-method-btn {
+            width: 100%; padding: 18px;
+            margin-bottom: 14px; border-radius: var(--radius);
+            font-size: 15px; font-weight: 700;
+            display: flex; align-items: center; gap: 12px;
+            transition: opacity .2s;
+        }
+        .pay-method-btn:hover { opacity: 0.85; }
+        .pay-card { background: var(--gold); color: var(--bg); border: none; }
+        .pay-cash { background: transparent; color: var(--silver); border: 1px solid var(--sage); }
+        .pay-cancel { background: none; border: none; color: var(--sage); font-size: 13px; margin-top: 8px; text-decoration: underline; }
+
+        /* Making / completion overlay */
+        #makingOverlay {
+            display: none; position: absolute; inset: 0;
+            background: var(--bg-card);
+            flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; z-index: 20;
+        }
+        #makingOverlay.show { display: flex; }
+        #makingStatus { font-size: 1.4rem; font-weight: 700; color: var(--silver); }
+        .prog-track {
+            width: 70%; height: 18px;
+            background: #1a3a31; border-radius: 20px; overflow: hidden;
+        }
+        #progBar {
+            width: 0%; height: 100%;
+            background: var(--gold); transition: width 0.3s;
+        }
+        #progPercent { color: var(--gold); font-size: 1.3rem; font-weight: 700; }
+        #doneBtn {
+            display: none; margin-top: 12px;
+            padding: 12px 36px; background: #fff;
+            color: var(--bg); border: none; border-radius: 10px;
+            font-weight: 700; font-size: 15px;
+        }
+
+        /* ─── Auth Modal ─── */
+        #authModal {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.85); z-index: 5000;
+            align-items: center; justify-content: center;
+        }
+        #authModal.open { display: flex; }
+        .auth-box {
+            background: var(--bg-card);
+            width: 90%; max-width: 420px;
+            border-radius: 28px; padding: 48px;
+            border: 1px solid var(--glow);
+            position: relative;
+        }
+        .auth-box h2 { color: var(--gold); margin-bottom: 28px; font-size: 1.6rem; }
+        .auth-box input {
+            width: 100%; padding: 14px 16px;
+            margin-bottom: 14px; border-radius: 10px;
+            border: 1px solid rgba(136,160,150,0.3);
+            background: rgba(255,255,255,0.05);
+            color: var(--silver); font-size: 15px;
+        }
+        .auth-submit {
+            width: 100%; padding: 15px;
+            background: var(--sage); color: var(--bg);
+            border: none; border-radius: 12px;
+            font-weight: 700; font-size: 15px; margin-top: 4px;
+            transition: background .2s;
+        }
+        .auth-submit:hover { background: var(--silver); }
+
+        /* ─── Footer ─── */
+        footer {
+            background: #04120e;
+            border-top: 1px solid var(--glow);
+            padding: 72px 50px;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr 1fr;
+            gap: 80px;
+        }
+        .footer-logo { font-size: 24px; font-weight: 900; color: var(--gold); margin-bottom: 20px; }
+        .footer-col h4 {
+            color: #fff; font-size: 14px;
+            border-bottom: 1px solid rgba(212,175,55,0.25);
+            padding-bottom: 10px; margin-bottom: 20px;
+        }
+        .footer-col p, .footer-col span { font-size: 13px; color: var(--sage); display: block; margin-bottom: 8px; }
+        .footer-tel { font-size: 20px; color: var(--silver); font-weight: 700; display: block; margin-bottom: 6px; }
+        .footer-qna-btn {
+            margin-top: 10px; padding: 9px 16px;
+            background: transparent; border: 1px solid var(--sage);
+            color: var(--sage); border-radius: 4px; font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Loading -->
+<div id="loading-screen">
+    <div class="spinner"></div>
+    <p style="color:var(--sage); font-size:14px; letter-spacing:2px;">LOADING</p>
+</div>
+
+<!-- ─── Header ─── -->
+<header>
+    <div class="nav-top">
+        <span onclick="openAuth('login')">로그인</span>
+        <span onclick="openAuth('join')">회원가입</span>
+        <span onclick="showPage('aboutPage')">소개</span>
+        <span onclick="showPage('qnaPage')">Q&A</span>
+    </div>
+    <div class="nav-main">
+        <div class="logo" onclick="showPage('mainPage')">ADC Rokey Bar</div>
+        <span class="nav-item" onclick="showPage('newsPage')">로키바 소식</span>
+        <span class="nav-item" onclick="showPage('mainPage', true)">메뉴소개</span>
+    </div>
+</header>
+
+<!-- ════════════════════════════════════════
+     MAIN PAGE
+════════════════════════════════════════ -->
+<div id="mainPage" class="page active">
+
+    <!-- Hero -->
+    <section class="hero">
+        <button class="btn-greet" onclick="alert('로봇에서 인사를 했습니다! 🤖')">👋<br>로봇 인사</button>
+        <div class="robot-circle">LOKIBAR ROBOT</div>
+        <button class="btn-start" onclick="openOrder()">지금 주문하기</button>
+    </section>
+
+    <!-- Landing Menu Cards -->
+    <section class="menu-section" id="menu-section">
+
+        <!-- MOJITO -->
+        <div class="menu-card">
+            <div class="menu-card-inner">
+                <div class="menu-card-text">
+                    <div class="gold-title">MOJITO</div>
+                    <h3>신선한 라임과 민트가 어우러진 상쾌한 클래식 칵테일.</h3>
+                    <p>청량한 탄산감과 함께 깔끔하게 마무리되는 산뜻한 한 잔.</p>
+                    <button class="detail-btn" onclick="openOrder()">주문하기</button>
+                </div>
+                <div class="menu-card-img">
+                    <img src="https://tropical-bronze-6axcvyofoa.edgeone.app/1.png.png" alt="Mojito">
+                </div>
+            </div>
+        </div>
+
+        <!-- TEQUILA SUNRISE -->
+        <div class="menu-card">
+            <div class="menu-card-inner">
+                <div class="menu-card-text">
+                    <div class="gold-title">TEQUILA SUNRISE</div>
+                    <h3>오렌지의 달콤함과 데킬라의 정열적인 조화.</h3>
+                    <p>떠오르는 태양을 닮은 화려한 색감과 부드러운 목넘김이 특징인 칵테일.</p>
+                    <button class="detail-btn" onclick="openOrder()">주문하기</button>
+                </div>
+                <div class="menu-card-img">
+                    <!-- Local file replaced with placeholder; swap with your hosted image URL -->
+                    <div style="width:300px;height:240px;background:rgba(255,255,255,0.05);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--sage);font-size:14px;">이미지 준비 중</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GALAXY COCKTAIL -->
+        <div class="menu-card">
+            <div class="menu-card-inner">
+                <div class="menu-card-text">
+                    <div class="gold-title">GALAXY COCKTAIL</div>
+                    <h3>우주의 신비로움을 담은 RokeyBAR만의 시그니처.</h3>
+                    <p>보랏빛 은하수가 흐르는 듯한 몽환적인 비주얼과 달콤한 풍미를 선사합니다.</p>
+                    <button class="detail-btn" onclick="openOrder()">주문하기</button>
+                </div>
+                <div class="menu-card-img">
+                    <img src="https://dark-pink-ltzvdhagzv.edgeone.app/3.png.png" alt="Galaxy Cocktail">
+                </div>
+            </div>
+        </div>
+
+    </section>
+</div>
+
+<!-- ════════════════════════════════════════
+     NEWS PAGE
+════════════════════════════════════════ -->
+<div id="newsPage" class="page">
+    <div class="news-section">
+        <div class="news-box">
+            <div class="gold-title">Rokey NEWS</div>
+            <div class="news-inner">
+                <img src="https://yelling-moccasin-5yg27uvjxx.edgeone.app/%EB%A1%9C%ED%82%A4%EB%B0%94%20%ED%8F%AC%EC%8A%A4%ED%84%B0.png" alt="로키바 포스터">
+                <div class="news-text">
+                    <h3>✨ 로키바의 새로운 소식을 확인하세요!</h3>
+                    <p>로키바에서 준비한 이번 달의 특별한 포스터입니다.<br>새로운 시즌 메뉴와 다양한 이벤트를 준비하고 있습니다.</p>
+                    <button class="back-btn" onclick="showPage('mainPage')" style="margin-top:28px;">홈으로 돌아가기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ABOUT PAGE
+════════════════════════════════════════ -->
+<div id="aboutPage" class="page">
+    <div class="inner-page">
+        <h2>로키바 스토리 소개</h2>
+        <p>Rokey BAR는 두산 로보틱스의 M0609 정밀 로봇이 직접 제조하는 프리미엄 칵테일 바입니다.</p>
+        <p>사람의 손이 닿지 않는 완벽한 레시피, 매번 동일한 품질을 경험해 보세요.</p>
+        <button class="back-btn" onclick="showPage('mainPage')">메인으로 가기</button>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     Q&A PAGE
+════════════════════════════════════════ -->
+<div id="qnaPage" class="page">
+    <div class="inner-page">
+        <h2>자주 묻는 질문 (Q&A)</h2>
+        <p><strong>Q. 논알콜에 조금이라도 알콜이 들어가나요?</strong></p>
+        <p>A. 로키바의 논알콜 메뉴는 0.00% 완전 무알콜 원료만을 사용합니다.</p>
+        <div class="qna-box">
+            <h3>고객 소리함</h3>
+            <textarea placeholder="의견을 남겨주세요..."></textarea>
+            <button class="send-btn" onclick="alert('접수되었습니다. 감사합니다!')">보내기</button>
+        </div>
+        <button class="back-btn" onclick="showPage('mainPage')">메인으로 가기</button>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     ORDER MODAL
+════════════════════════════════════════ -->
+<div id="orderModal">
+    <div class="order-box">
+
+        <button class="close-btn" onclick="closeOrder()">×</button>
+
+        <!-- LEFT: Menu Panel -->
+        <div class="menu-panel">
+
+            <!-- Step A: Choose cocktail -->
+            <div id="stepCocktail">
+                <div class="panel-title">메뉴 선택</div>
+                <div class="cocktail-grid">
+
+                    <div class="c-card" onclick="pickCocktail('클래식 모히또', 5000, 'https://tropical-bronze-6axcvyofoa.edgeone.app/1.png.png')">
+                        <img src="https://tropical-bronze-6axcvyofoa.edgeone.app/1.png.png" alt="모히또">
+                        <div class="c-name">클래식 모히또</div>
+                        <div class="c-price">5,000원</div>
+                    </div>
+
+                    <div class="c-card" onclick="pickCocktail('선라이즈', 6000, '')">
+                        <div style="width:100%;height:130px;background:rgba(255,255,255,0.06);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:10px;">🌅</div>
+                        <div class="c-name">선라이즈</div>
+                        <div class="c-price">6,000원</div>
+                    </div>
+
+                    <div class="c-card" onclick="pickCocktail('갤럭시 칵테일', 7000, 'https://dark-pink-ltzvdhagzv.edgeone.app/3.png.png')">
+                        <img src="https://dark-pink-ltzvdhagzv.edgeone.app/3.png.png" alt="갤럭시">
+                        <div class="c-name">갤럭시 칵테일</div>
+                        <div class="c-price">7,000원</div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Step B: Choose alcohol / non-alcohol -->
+            <div id="stepAlcohol">
+                <button class="step-back" onclick="goBackToCocktail()">← 뒤로 가기</button>
+                <div class="panel-title">옵션 선택</div>
+
+                <div class="selected-preview" id="selectedPreview">
+                    <img id="prevImg" src="" alt="">
+                    <div>
+                        <div class="prev-name" id="prevName">—</div>
+                        <div class="prev-price" id="prevPrice">—</div>
+                    </div>
+                </div>
+
+                <div class="alcohol-options">
+                    <button class="alc-btn" onclick="pickAlcohol('알콜')">
+                        <span class="alc-icon">🍸</span>
+                        <div class="alc-label">
+                            알콜
+                            <small>성인 인증 필요 · 주류 포함</small>
+                        </div>
+                    </button>
+                    <button class="alc-btn" onclick="pickAlcohol('논알콜')">
+                        <span class="alc-icon">🥤</span>
+                        <div class="alc-label">
+                            논알콜
+                            <small>0.00% 완전 무알콜 원료 사용</small>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step C: Choose ice level -->
+            <div id="stepIce">
+                <button class="step-back" onclick="goBackToAlcohol()">← 뒤로 가기</button>
+                <div class="panel-title">얼음 양 선택</div>
+
+                <div class="selected-preview" id="icePreview">
+                    <img id="icePrevImg" src="" alt="">
+                    <div>
+                        <div class="prev-name" id="icePrevName">—</div>
+                        <div class="prev-price" id="icePrevOption" style="color:var(--sage);font-size:13px;">—</div>
+                    </div>
+                </div>
+
+                <div class="ice-options">
+                    <button class="ice-btn" onclick="addToCart('얼음 없음')">
+                        <span class="ice-icon">🚫</span>
+                        <div class="ice-label">얼음 없음 <small>No Ice</small></div>
+                    </button>
+                    <button class="ice-btn" onclick="addToCart('얼음 적게')">
+                        <span class="ice-icon">🧊</span>
+                        <div class="ice-label">얼음 적게 <small>Light Ice</small></div>
+                    </button>
+                    <button class="ice-btn" onclick="addToCart('얼음 보통')">
+                        <span class="ice-icon">🧊🧊</span>
+                        <div class="ice-label">얼음 보통 <small>Regular Ice</small></div>
+                    </button>
+                    <button class="ice-btn" onclick="addToCart('얼음 많이')">
+                        <span class="ice-icon">🧊🧊🧊</span>
+                        <div class="ice-label">얼음 많이 <small>Extra Ice</small></div>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT: Cart Panel -->
+        <div class="cart-panel">
+            <div class="cart-title">주문 목록</div>
+            <div id="cartList">
+                <p class="empty-msg">메뉴를 골라주세요</p>
+            </div>
+            <div class="cart-footer">
+                <div class="cart-total">
+                    <span>총 결제금액</span>
+                    <span id="totalPrice">0원</span>
+                </div>
+                <button class="pay-btn" onclick="startPayment()">결제하기</button>
+            </div>
+        </div>
+
+        <!-- Making Overlay (covers entire modal) -->
+        <div id="makingOverlay">
+            <div id="makingStatus">제조를 시작합니다</div>
+            <div class="prog-track"><div id="progBar"></div></div>
+            <div id="progPercent">0%</div>
+            <button id="doneBtn" onclick="closeOrder()">맛있게 드세요! 🍹</button>
+        </div>
+
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     PAYMENT METHOD MODAL
+════════════════════════════════════════ -->
+<div id="payModal">
+    <div class="pay-box">
+        <h2>결제 수단 선택</h2>
+        <p>결제 방식을 선택해 주세요.</p>
+        <button class="pay-method-btn pay-card" onclick="confirmPayment('카드')">
+            <span style="font-size:22px;">💳</span> 신용카드 / 삼성페이
+        </button>
+        <button class="pay-method-btn pay-cash" onclick="confirmPayment('현금')">
+            <span style="font-size:22px;">💵</span> 현금 결제
+        </button>
+        <button class="pay-cancel" onclick="document.getElementById('payModal').classList.remove('open')">취소하기</button>
+    </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     AUTH MODAL  (Login / Join)
+════════════════════════════════════════ -->
+<div id="authModal">
+    <div class="auth-box">
+        <button class="close-btn" onclick="closeAuth()">×</button>
+
+        <!-- Login -->
+        <div id="loginForm">
+            <h2>LOGIN</h2>
+            <input type="text" placeholder="아이디">
+            <input type="password" placeholder="비밀번호">
+            <button class="auth-submit" onclick="alert('로그인 시도')">로그인하기</button>
+        </div>
+
+        <!-- Join -->
+        <div id="joinForm" style="display:none;">
+            <h2>SIGN UP</h2>
+            <input type="text" placeholder="사용할 아이디">
+            <input type="email" placeholder="이메일 주소">
+            <button class="auth-submit" onclick="alert('가입 완료!')">가입 완료</button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── Footer ─── -->
+<footer>
+    <div class="footer-col">
+        <div class="footer-logo">ADC Rokey Bar</div>
+        <p>주식회사 ADC로키바글로벌</p>
+        <p>대표자: 사용자 | 고객센터: 1588-8298</p>
+        <p>서울시 구로구 디지털로 123</p>
+        <p style="margin-top:16px; opacity:.5;">© ADC Rokey BAR GLOBAL.</p>
+    </div>
+    <div class="footer-col">
+        <h4>MENU</h4>
+        <span>시그니처 칵테일</span>
+        <span>논알콜 음료</span>
+        <span>사이드 디쉬</span>
+        <span>오시는 길</span>
+    </div>
+    <div class="footer-col">
+        <h4>CUSTOMER</h4>
+        <span class="footer-tel">1588-8298</span>
+        <span>AM 09:00 - PM 06:00</span>
+        <span>자주 묻는 질문 (FAQ)</span>
+        <button class="footer-qna-btn">1:1 온라인 문의</button>
+    </div>
+</footer>
+
+
+<!-- ════════════════════════════════════════
+     JAVASCRIPT  (single, clean block)
+════════════════════════════════════════ -->
+<script>
+    /* ── Hide loading screen ── */
+    window.addEventListener('load', () => {
+        document.getElementById('loading-screen').style.display = 'none';
+    });
+
+    /* ── Page navigation ── */
+    function showPage(id, scroll = false) {
+        document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        if (scroll) {
+            setTimeout(() => {
+                document.getElementById('menu-section')?.scrollIntoView({ behavior: 'smooth' });
+            }, 120);
+        }
+    }
+
+    /* ── Auth modal ── */
+    function openAuth(type) {
+        document.getElementById('loginForm').style.display = type === 'login' ? 'block' : 'none';
+        document.getElementById('joinForm').style.display  = type === 'join'  ? 'block' : 'none';
+        document.getElementById('authModal').classList.add('open');
+    }
+    function closeAuth() {
+        document.getElementById('authModal').classList.remove('open');
+    }
+
+    /* ════════════════════════════════════════
+       ORDER STATE
+       cart: array of grouped items
+       { name, price, imgSrc, option, ice, qty }
+       pendingItem: item being built before added to cart
+    ════════════════════════════════════════ */
+    let cart = [];
+    let pendingItem = null;
+
+    /* ── Open / Close order modal ── */
+    function openOrder() {
+        resetOrder();
+        document.getElementById('orderModal').classList.add('open');
+    }
+    function closeOrder() {
+        document.getElementById('orderModal').classList.remove('open');
+        resetMaking();
+    }
+    function resetOrder() {
+        cart = [];
+        pendingItem = null;
+        renderCart();
+        showStep('stepCocktail');
+        resetMaking();
+    }
+
+    /* ── Step helper ── */
+    function showStep(id) {
+        ['stepCocktail', 'stepAlcohol', 'stepIce'].forEach(s => {
+            document.getElementById(s).style.display = s === id ? 'block' : 'none';
+        });
+    }
+
+    /* ── STEP A: pick cocktail ── */
+    function pickCocktail(name, price, imgSrc) {
+        pendingItem = { name, price, imgSrc, option: null, ice: null };
+
+        // populate alcohol-step preview
+        const img = document.getElementById('prevImg');
+        img.src = imgSrc || '';
+        img.style.display = imgSrc ? 'block' : 'none';
+        document.getElementById('prevName').textContent  = name;
+        document.getElementById('prevPrice').textContent = price.toLocaleString() + '원';
+
+        showStep('stepAlcohol');
+    }
+
+    function goBackToCocktail() {
+        pendingItem = null;
+        showStep('stepCocktail');
+    }
+
+    /* ── STEP B: pick alcohol / non-alcohol ── */
+    function pickAlcohol(option) {
+        if (!pendingItem) return;
+        pendingItem.option = option;
+
+        // populate ice-step preview
+        const img = document.getElementById('icePrevImg');
+        img.src = pendingItem.imgSrc || '';
+        img.style.display = pendingItem.imgSrc ? 'block' : 'none';
+        document.getElementById('icePrevName').textContent   = pendingItem.name;
+        document.getElementById('icePrevOption').textContent = option;
+
+        showStep('stepIce');
+    }
+
+    function goBackToAlcohol() {
+        if (!pendingItem) return;
+        pendingItem.option = null;
+        showStep('stepAlcohol');
+    }
+
+    /* ── STEP C: pick ice → add to cart (grouped) ── */
+    function addToCart(ice) {
+        if (!pendingItem) return;
+        pendingItem.ice = ice;
+
+        // Find an existing group with same name + option + ice
+        const key = `${pendingItem.name}|${pendingItem.option}|${pendingItem.ice}`;
+        const existing = cart.find(g => g.key === key);
+        if (existing) {
+            existing.qty += 1;
+        } else {
+            cart.push({ ...pendingItem, key, qty: 1 });
+        }
+
+        renderCart();
+        showStep('stepCocktail'); // back to menu for more orders
+        pendingItem = null;
+    }
+
+    /* ── Quantity controls ── */
+    function changeQty(key, delta) {
+        const idx = cart.findIndex(g => g.key === key);
+        if (idx === -1) return;
+        cart[idx].qty += delta;
+        if (cart[idx].qty <= 0) cart.splice(idx, 1);
+        renderCart();
+    }
+
+    /* ── Render cart (grouped with ×N) ── */
+    function renderCart() {
+        const list  = document.getElementById('cartList');
+        const total = cart.reduce((s, g) => s + g.price * g.qty, 0);
+
+        if (cart.length === 0) {
+            list.innerHTML = '<p class="empty-msg">메뉴를 골라주세요</p>';
+        } else {
+            list.innerHTML = cart.map(g => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <span>${g.name}</span>
+                        <small>${g.option} · ${g.ice}</small>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <div class="cart-qty">
+                            <button class="qty-btn" onclick="changeQty('${g.key}', -1)">−</button>
+                            <span class="qty-num">×${g.qty}</span>
+                            <button class="qty-btn" onclick="changeQty('${g.key}', 1)">+</button>
+                        </div>
+                        <span style="min-width:54px;text-align:right;">${(g.price * g.qty).toLocaleString()}원</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+        document.getElementById('totalPrice').textContent = total.toLocaleString() + '원';
+    }
+
+    /* ── Payment: show method modal ── */
+    function startPayment() {
+        if (cart.length === 0) { alert('메뉴를 선택해 주세요!'); return; }
+        document.getElementById('payModal').classList.add('open');
+    }
+
+    function confirmPayment(method) {
+        document.getElementById('payModal').classList.remove('open');
+        startMaking(method);
+    }
+
+    /* ── Making animation ── */
+    function startMaking(method) {
+        const overlay = document.getElementById('makingOverlay');
+        overlay.classList.add('show');
+
+        const bar    = document.getElementById('progBar');
+        const status = document.getElementById('makingStatus');
+        const pct    = document.getElementById('progPercent');
+        const btn    = document.getElementById('doneBtn');
+
+        let progress = 0;
+        bar.style.width = '0%';
+        btn.style.display = 'none';
+        status.textContent = `${method === '카드' ? '💳 카드' : '💵 현금'} 결제 완료! 제조를 시작합니다`;
+
+        const iv = setInterval(() => {
+            progress += 4;
+            bar.style.width = progress + '%';
+            pct.textContent  = progress + '%';
+            if (progress > 20) status.textContent = '🤖 로봇이 음료를 제조 중입니다!';
+            if (progress >= 100) {
+                clearInterval(iv);
+                status.textContent = '✅ 제조 완료! 맛있게 드세요.';
+                btn.style.display  = 'inline-block';
+                cart = [];
+                renderCart();
+            }
+        }, 120);
+    }
+
+    function resetMaking() {
+        document.getElementById('makingOverlay').classList.remove('show');
+        document.getElementById('progBar').style.width = '0%';
+        document.getElementById('progPercent').textContent = '0%';
+        document.getElementById('makingStatus').textContent = '제조를 시작합니다';
+        document.getElementById('doneBtn').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
