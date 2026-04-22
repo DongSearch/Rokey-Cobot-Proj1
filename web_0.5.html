@@ -4,7 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ADC Rokey Bar</title>
-    
+
+    <!-- ─── Firebase Compat SDK (same approach as working version) ─── -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey:            "AIzaSy...",
+            authDomain:        "cocktail-robot-87128.firebaseapp.com",
+            projectId:         "cocktail-robot-87128",
+            storageBucket:     "cocktail-robot-87128.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId:             "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+
     <style>
         /* ─── CSS Variables ─── */
         :root {
@@ -708,6 +724,9 @@
         <!-- Making Overlay (covers entire modal) -->
         <div id="makingOverlay">
             <div id="makingStatus">제조를 시작합니다</div>
+            <div style="font-size:0.95rem; color:var(--sage); margin-bottom:4px;">
+                <span id="stepLabel"></span>
+            </div>
             <div class="prog-track"><div id="progBar"></div></div>
             <div id="progPercent">0%</div>
             <button id="doneBtn" onclick="closeOrder()">맛있게 드세요! 🍹</button>
@@ -828,10 +847,6 @@
         resetOrder();
         document.getElementById('orderModal').classList.add('open');
     }
-    function closeOrder() {
-        document.getElementById('orderModal').classList.remove('open');
-        resetMaking();
-    }
     function resetOrder() {
         cart = [];
         pendingItem = null;
@@ -951,37 +966,134 @@
 
     function confirmPayment(method) {
         document.getElementById('payModal').classList.remove('open');
-        startMaking(method);
-    }
 
-    /* ── Making animation ── */
-    function startMaking(method) {
+        /* Show making overlay immediately */
         const overlay = document.getElementById('makingOverlay');
+        const status  = document.getElementById('makingStatus');
+        const bar     = document.getElementById('progBar');
+        const pct     = document.getElementById('progPercent');
+        const btn     = document.getElementById('doneBtn');
         overlay.classList.add('show');
-
-        const bar    = document.getElementById('progBar');
-        const status = document.getElementById('makingStatus');
-        const pct    = document.getElementById('progPercent');
-        const btn    = document.getElementById('doneBtn');
-
-        let progress = 0;
-        bar.style.width = '0%';
+        bar.style.width   = '0%';
+        pct.textContent   = '0%';
         btn.style.display = 'none';
-        status.textContent = `${method === '카드' ? '💳 카드' : '💵 현금'} 결제 완료! 제조를 시작합니다`;
+        status.textContent = '🤖 제조 중...';
 
-        const iv = setInterval(() => {
-            progress += 4;
-            bar.style.width = progress + '%';
-            pct.textContent  = progress + '%';
-            if (progress > 20) status.textContent = '🤖 로봇이 음료를 제조 중입니다!';
-            if (progress >= 100) {
-                clearInterval(iv);
-                status.textContent = '✅ 제조 완료! 맛있게 드세요.';
+        /* Snapshot of cart at time of payment */
+        const snapshot = cart.map(g => ({ ...g }));
+        const counterRef = db.collection("counter").doc("order_web");
+
+        /* ── STEP 1: atomically increment the counter ── */
+        counterRef.update({
+            order_num: firebase.firestore.FieldValue.increment(1)
+        })
+        .catch(() => {
+            /* Doc doesn't exist yet — create it starting at 1 */
+            return counterRef.set({ order_num: 1 });
+        })
+        .then(() => counterRef.get())          /* STEP 2: read the new value */
+        .then((snap) => {
+            const order_num = snap.data().order_num;
+
+            /* STEP 3: write one cocktail_web doc per cart item */
+            const batch = db.batch();
+            snapshot.forEach((item) => {
+                const docRef = db.collection("cocktail_web").doc();
+                batch.set(docRef, {
+                    ordered_at:     firebase.firestore.Timestamp.now(),
+                    finished_at:    "Idle",
+                    order_num:      order_num,
+                    queue:          order_num,
+                    menu:           item.name,
+                    qty:            item.qty,
+                    option_alcohol: item.option,
+                    option_ice:     item.ice,
+                    payment:        method,
+                    take_out:       "매장 이용",
+                    status:         "waiting"
+                });
+            });
+            return batch.commit().then(() => order_num);
+        })
+        .then((order_num) => {
+            console.log("✅ saved, order_num:", order_num);
+
+            const bar    = document.getElementById('progBar');
+            const pct    = document.getElementById('progPercent');
+            const status = document.getElementById('makingStatus');
+            const btn    = document.getElementById('doneBtn');
+            const step   = document.getElementById('stepLabel');
+
+            status.textContent = '🤖 로봇이 제조 중입니다...';
+            btn.style.display  = 'none';
+
+            /* ── Listen to cocktail_robot/status in real time ── */
+            const robotRef = db.collection("cocktail_robot").doc("status");
+            let unsubscribe = null;
+            let robotStarted = false; // becomes true once is_busy flips to true
+
+            unsubscribe = robotRef.onSnapshot((doc) => {
+                if (!doc.exists) return;
+
+                const data      = doc.data();
+                const progress  = Number(data.progress)   || 0;
+                const stepIdx   = Number(data.step_index) || 0;
+                const process   = data.process  || '';
+                const isBusy    = data.is_busy;
+
+                /* Wait for robot to actually start (is_busy: true) before tracking */
+                if (isBusy === true) robotStarted = true;
+
+                /* Update progress bar and step label only once robot has started */
+                if (robotStarted) {
+                    bar.style.width  = progress + '%';
+                    pct.textContent  = progress + '%';
+                    step.textContent = `Step ${stepIdx}  ${process}`;
+
+                    if (progress > 0 && progress < 100) {
+                        status.textContent = `🤖 제조 중... (${progress}%)`;
+                    } else if (progress === 0) {
+                        status.textContent = '🤖 로봇이 준비 중입니다...';
+                    }
+
+                    /* Done: robot was busy and now finished */
+                    const isDone = progress >= 100 || process === '완료' || isBusy === false;
+                    if (isDone) {
+                        if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+                        status.innerHTML = `✅ 제조 완료! 맛있게 드세요.<br>
+                            <span style="color:var(--gold);font-size:1rem;">주문번호: #${String(order_num).padStart(4,'0')}</span>`;
+                        step.textContent  = '';
+                        btn.style.display = 'inline-block';
+                        cart = [];
+                        renderCart();
+                    }
+                }
+            }, (err) => {
+                console.error("onSnapshot error:", err);
+                if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+                status.textContent = '✅ 제조 완료!';
                 btn.style.display  = 'inline-block';
                 cart = [];
                 renderCart();
-            }
-        }, 120);
+            });
+
+            window._robotUnsubscribe = unsubscribe;
+        })
+        .catch((err) => {
+            console.error("❌ Firebase error:", err);
+            status.textContent = '❌ 저장 실패. 다시 시도해주세요.';
+            btn.style.display = 'inline-block';
+        });
+    }
+
+    function closeOrder() {
+        /* Stop robot listener if still active */
+        if (typeof window._robotUnsubscribe === 'function') {
+            window._robotUnsubscribe();
+            window._robotUnsubscribe = null;
+        }
+        document.getElementById('orderModal').classList.remove('open');
+        resetMaking();
     }
 
     function resetMaking() {
@@ -989,6 +1101,7 @@
         document.getElementById('progBar').style.width = '0%';
         document.getElementById('progPercent').textContent = '0%';
         document.getElementById('makingStatus').textContent = '제조를 시작합니다';
+        document.getElementById('stepLabel').textContent = '';
         document.getElementById('doneBtn').style.display = 'none';
     }
 </script>
