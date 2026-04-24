@@ -17,12 +17,7 @@ def shaking():
     movel(pos1, vel=VELOCITY, acc=ACC)
     grip_shaking_cup()
     movel(pos2, vel=VELOCITY, acc=ACC)
-    
-    # shake_pos_5 = [26.03, 4.60, 89.18, -91.49, 63.06, 20]
-    # movej(shake_pos_5, vel=VELOCITY, acc=ACC)
-
     print("작업 위치로 이동 중...")
-    #P0 = posj(0, 0, 90, 0, 90, 0)
     shake_pos_5 = [26.03, 4.60, 89.18, -91.49, 63.06, 20]
     movej(shake_pos_5, vel=VELOCITY, acc=ACC)
 

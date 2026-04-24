@@ -12,9 +12,9 @@ def colander_reverse_operations():
 
     pos9 = posx([466.06+delta_x,-99.48-3,333.65+delta_z-20,86.19,-111.52,-5.78]) # 체반 집기 또는 놓기 위치
 
-    delta_x_4 = 0#10
-    delta_y_4 = 0#-10
-    # pos3 = posx([548.45,138.33,157.21,95.9,-92.97,-5.21]) # 컵 위에 올리기 전 위치
+    delta_x_4 = 0
+    delta_y_4 = 0
+    
     pos3 = posx([548.45+delta_x_4,138.33+delta_y_4,157.21,95.9,-92.97,-5.21]) # 컵 위에 올리기 전 위치
     pos4 = posx([548.45+delta_x_4,138.33+delta_y_4,137.21,95.9,-92.97,-5.21]) # 컵 위에 올리기
     pos5 = posx([528.45,138.33,137.21,95.9,-92.97,-5.21]) # 컵 위에 올리고 빼기
@@ -65,15 +65,3 @@ def colander_reverse_operations():
     movel(pos12, vel=20, acc=ACC)
     movel(pos2, vel=VELOCITY, acc=ACC)
     release()
-
-
-
-    # movel(pos2, vel=VELOCITY, acc=ACC)
-    # movel(pos1, vel=VELOCITY, acc=ACC)
-    # grip()
-    # movel(pos2, vel=VELOCITY, acc=ACC)
-    # movel(pos3, vel=VELOCITY, acc=ACC)
-    # movel(pos4, vel=VELOCITY, acc=ACC)
-    # release()
-    # movel(pos5, vel=VELOCITY, acc=ACC)
-    # movej(JReady, vel=VELOCITY, acc=ACC)

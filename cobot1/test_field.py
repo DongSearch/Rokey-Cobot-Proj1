@@ -14,7 +14,6 @@ from cobot1.motions.pouring_ops import last_pouring
 from cobot1.motions.colander_ops import colander_operations
 from cobot1.motions.colander_reverse_ops import colander_reverse_operations
 from cobot1.motions.gripper_ops import release, grip_shaking_cup, grip_cup, grip_cover_cap, release1
-from cobot1.motions.async_move import amove_l
 from cobot1.motions.hello_ops import hello
 
 # DR_init 기본 모델 설정

@@ -12,11 +12,3 @@ def stanby():
     movel(pos1, vel=50, acc=50)
 
     movel(pos2, vel=50, acc=50)
-
-
-    # pos_list=[posj(41.33,22.62,40,-61.51,110.07,180), posj(41.33,22.62,50,-140.51,110.07,7)]
-    # # for i in range(3):
-    # #     pos_list.append()
-    # #     pos_list.append()
-    # while True:
-    #     movesj(pos_list,vel=3000, acc=3000)

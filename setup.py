@@ -1,4 +1,6 @@
 from setuptools import find_packages, setup
+import os
+from glob import glob
 
 package_name = 'cobot1'
 
@@ -10,6 +12,7 @@ setup(
         ('share/ament_index/resource_index/packages',
             ['resource/' + package_name]),
         ('share/' + package_name, ['package.xml']),
+        (os.path.join('share', package_name, 'launch'), glob(os.path.join('launch', '*.[pxy][yma]*'))),
     ],
     install_requires=['setuptools'],
     zip_safe=True,
@@ -24,14 +27,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'user_input_publisher = cobot1.user_input_publisher:main',
-            'user_input_subscriber = cobot1.user_input_subscriber:main',
             'main = cobot1.main:main',
             'test_field = cobot1.test_field:main',
-            'emg_server = cobot1.emergency.emg_server:main',
-            'emg_client = cobot1.emergency.emg_client:main',
-            'robot_state_publisher = cobot1.robot_state_publisher:main',
-            'action_test = cobot1.action_test:main',
             'connect = cobot1.db_web_system:main',
         ],
     },

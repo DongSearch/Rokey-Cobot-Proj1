@@ -31,34 +31,3 @@ def last_pouring():
     movel(pos1, vel=VELOCITY, acc=ACC)
     release()
     movel(pos2, vel=VELOCITY, acc=ACC)
-
-# def last_pouring2():
-#     from DSR_ROBOT2 import posx, movej, movel
-#     release()
-#     delta_z = 40  # 컵을 들 때 높이 증가량
-#     delta_y = 17  # 컵을 들 때 y축 이동량 (필요에 따라 조정)
-#     delta_x = -20  # 컵을 들 때 x축 이동량 (필요에 따라 조정)
-#     pos1 = posx([347.89+delta_x, 119.3+delta_y, 95.51+delta_z, 89.02, -90.39, 89.91]) # shaking cup position
-#     pos2 = posx([347.89+delta_x, 119.3+delta_y, 189.19+delta_z, 89.02, -90.39, 89.91]) # shaking cup up position
-
-#     movel(pos2, vel=VELOCITY, acc=ACC)
-#     movel(pos1, vel=VELOCITY, acc=ACC)
-#     grip_shaking_cup()
-#     movel(pos2, vel=VELOCITY, acc=ACC)
-    
-#     pos3 = posx([546.82, 90.25, 192.7, 98.29, -90, 90])
-#     pos4 = posx([546.82, 90.25, 192.69, 96.47, -91.82, 0.05])
-#     pos5 = posx([557.92, 90.25, 192.69, 96.47, -91.82, 0.05])
-#     pos6 = posx([557.93, 90.25, 192.69, 95.68, -91.74, -18.24])
-    
-#     movel(pos3, vel=VELOCITY, acc=ACC)
-#     movel(pos4, vel=VELOCITY, acc=ACC)
-#     movel(pos5, vel=VELOCITY, acc=ACC)
-#     movel(pos6, vel=VELOCITY, acc=ACC)
-#     movel(pos3, vel=VELOCITY, acc=ACC)
-
-#     movel(pos2, vel=VELOCITY, acc=ACC)
-#     movel(pos1, vel=VELOCITY, acc=ACC)
-#     release()
-#     movel(pos2, vel=VELOCITY, acc=ACC)
-
