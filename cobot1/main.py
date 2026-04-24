@@ -358,7 +358,7 @@ def recovery_3_action():
 # ======================
 def task_loop():
     global status
-    from DSR_ROBOT2 import movej, amovel, posx, get_current_posx, movesj, posj, wait
+    from DSR_ROBOT2 import movej, amovel, posx, get_current_posx, movesj, posj, wait, movel
     from cobot1.config import VELOCITY, ACC, JReady
 
     release()
@@ -371,22 +371,22 @@ def task_loop():
         pos1 = posx([133.1, 11.9, 809.8, 2.1, -17.4, 0.0])
         pos2 = posx([598.8, 27.7, 776.3, 1.8, 26.5, 0.4])
 
-        amovel(pos1, vel=50, acc=50)
-        while True:
-            if status == 1:
-                break
-            x = list(get_current_posx()[0])
-            x = [round(v, 1) for v in x]
-            if x==list(pos1):
-                break
-        amovel(pos2, vel=50, acc=50)
-        while True:
-            if status == 1:
-                break
-            x = list(get_current_posx()[0])
-            x = [round(v, 1) for v in x]
-            if x==list(pos2):
-                break
+        movel(pos1, vel=50, acc=50)
+        # while True:
+        #     if status == 1:
+        #         break
+        #     x = list(get_current_posx()[0])
+        #     x = [round(v, 1) for v in x]
+        #     if x==list(pos1):
+        #         break
+        movel(pos2, vel=50, acc=50)
+        # while True:
+        #     if status == 1:
+        #         break
+        #     x = list(get_current_posx()[0])
+        #     x = [round(v, 1) for v in x]
+        #     if x==list(pos2):
+        #         break
         # ======================================
         if status == 1:
             # ROS2 환경에서의 정지 상수 (DR_QSTOP과 동일한 역할)

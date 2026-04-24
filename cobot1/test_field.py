@@ -26,21 +26,11 @@ def perform_task():
     """작업 시퀀스 실행"""
     from DSR_ROBOT2 import movej, amovel, posx, get_current_posx, movesj, posj
     from cobot1.config import VELOCITY, ACC, JReady
-
-    pos1 = posx([133.1, 11.9, 809.8, 2.1, -17.4, 0.0])
-    movej(JReady, vel=VELOCITY, acc=ACC)
-    movej([1.86, -17.35, 115.41, 0.07, -114.99, 0.06], vel=100, acc=100)
     
-    amovel(pos1, vel=50, acc=50)
-    while True:
-        x = list(get_current_posx()[0])
-        x = [round(v, 1) for v in x]
-        print("현재 위치:", x)
-        print(x==list(pos1))
-        if x==list(pos1):
-            break
-    time.sleep(1)
-    hello()
+    release()
+    movej(JReady, vel=VELOCITY, acc=ACC)
+    cup3()
+    
 
 
 def main(args=None):
