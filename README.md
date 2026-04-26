@@ -49,17 +49,26 @@ cd ~/cobot_ws
 rosdep update
 rosdep install --from-paths src --ignore-src -r -y
 ```
+### 3. download doosn-robot2 library
+https://github.com/DoosanRobotics/doosan-robot2/tree/humble
 
-### 3. Source the environment
+### 4. Build
+```
+colcon build
+```
+### 5. Source the environment
 ```
 source install/setup.bash
 ```
+### 6. create firebase apk-key json file and put it in your path
 
-### 4. create firebase apk-key json file and put it in your path
+### 7. design firebase DB like excel file provided
 
-### 5. design firebase DB like excel file provided
 
-### 6. Run launch file
+### 8. Run launch file
 ```
-ros2 launch <package_name> <launch_file>.launch.py
+ros2 launch cobot1 start.launch.py
 ```
+
+
+
