@@ -5,12 +5,24 @@ This project is a ROS2-based collaborative Cocktail-Robot system with M0609 mode
 It is designed to control robotic tasks integrated with external systems such as Firebase DB and user interfaces.
 you can download it with git as well as docker
 
+full video : https://youtu.be/z9A9UtmMI2A?si=LMfx_Y0nX4l919ae
+
+# 🐳 Docker
+https://hub.docker.com/r/jongun1203/bartender_cobot_image
+
+```
+docker run -it \
+    --net=host \
+    --privileged \
+    -e DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    -v /path/to/your/serviceAccountKey.json:/home/kim/cobot_ws/serviceAccountKey.json \
+    --name bartender_cobot \
+    jongun1203/bartender_cobot_image:v1.0
+```
 
 
-
-
-
-
+# 🔧 Git Setup
 ---
 
 ## ⚙️ Requirements
@@ -31,7 +43,6 @@ Make sure your environment meets the following:
 cd ~/cobot_ws/src
 git clone https://github.com/DongSearch/Rokey-Cobot-Proj1.git
 ```
-
 ### 2. Install Dependencies
 ```
 cd ~/cobot_ws
@@ -45,7 +56,10 @@ source install/setup.bash
 ```
 
 ### 4. create firebase apk-key json file and put it in your path
-```
-source install/setup.bash
-```
 
+### 5. design firebase DB like excel file provided
+
+### 6. Run launch file
+```
+ros2 launch <package_name> <launch_file>.launch.py
+```
