@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ADC Rokey Bar - 대기현황판</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;900&family=Outfit:wght@400;600;700;800;900&family=Black+Han+Sans&display=swap" rel="stylesheet">
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey:            "AIzaSy...",
+            authDomain:        "cocktail-robot-87128.firebaseapp.com",
+            projectId:         "cocktail-robot-87128",
+            storageBucket:     "cocktail-robot-87128.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId:             "YOUR_APP_ID"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+    </script>
+
+    <style>
+        :root {
+            --bg-start:    #e8e4f8;
+            --bg-mid:      #d8d2f5;
+            --bg-end:      #ede9ff;
+            --purple:      #6c3fc5;
+            --purple-lt:   #9b6ee8;
+            --purple-dk:   #4a2a9a;
+            --pink:        #e86fb0;
+            --accent:      #c84fc3;
+            --gold:        #f5a623;
+            --gold-lt:     #ffd166;
+            --white:       #ffffff;
+            --text-dark:   #2a1a4a;
+            --text-mid:    #5a4a7a;
+            --text-lt:     #8a7aaa;
+            --card-bg:     rgba(255,255,255,0.58);
+            --card-border: rgba(255,255,255,0.85);
+            --glow-purple: rgba(108,63,197,0.22);
+            --glow-pink:   rgba(232,111,176,0.28);
+            --radius-lg:   32px;
+            --radius-md:   20px;
+            --radius-sm:   12px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        html, body {
+            height: 100%;
+            font-family: 'Noto Sans KR', 'Outfit', sans-serif;
+            background: linear-gradient(145deg, var(--bg-start) 0%, var(--bg-mid) 45%, var(--bg-end) 100%);
+            min-height: 100vh;
+            color: var(--text-dark);
+            overflow-x: hidden;
+        }
+
+        /* ── 배경 글로우 ── */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background:
+                radial-gradient(ellipse 65% 55% at 12% 25%, rgba(180,140,255,0.20) 0%, transparent 70%),
+                radial-gradient(ellipse 45% 45% at 88% 72%, rgba(232,111,176,0.16) 0%, transparent 70%),
+                radial-gradient(ellipse 35% 30% at 55% 8%,  rgba(255,255,255,0.38) 0%, transparent 65%);
+        }
+        body::after {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                radial-gradient(circle 2px   at 10% 20%, rgba(255,255,255,0.9) 0%, transparent 100%),
+                radial-gradient(circle 1.5px at 25% 55%, rgba(200,160,255,0.8) 0%, transparent 100%),
+                radial-gradient(circle 2px   at 40% 15%, rgba(255,255,255,0.7) 0%, transparent 100%),
+                radial-gradient(circle 1px   at 60% 40%, rgba(255,180,220,0.8) 0%, transparent 100%),
+                radial-gradient(circle 2px   at 75% 20%, rgba(255,255,255,0.9) 0%, transparent 100%),
+                radial-gradient(circle 1.5px at 88% 60%, rgba(200,160,255,0.7) 0%, transparent 100%),
+                radial-gradient(circle 1px   at  5% 75%, rgba(255,255,255,0.6) 0%, transparent 100%),
+                radial-gradient(circle 2px   at 95% 35%, rgba(255,200,240,0.8) 0%, transparent 100%),
+                radial-gradient(circle 1px   at 50% 82%, rgba(220,180,255,0.7) 0%, transparent 100%),
+                radial-gradient(circle 1.5px at 70% 88%, rgba(255,255,255,0.8) 0%, transparent 100%);
+        }
+
+        /* ══════════════════ HEADER ══════════════════ */
+        header {
+            position: sticky; top: 0; z-index: 200;
+            background: rgba(255,255,255,0.72);
+            backdrop-filter: blur(22px) saturate(1.4);
+            -webkit-backdrop-filter: blur(22px) saturate(1.4);
+            border-bottom: 1px solid rgba(255,255,255,0.90);
+            box-shadow: 0 2px 24px rgba(108,63,197,0.09);
+            padding: 0 48px;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 68px;
+        }
+        .header-left {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .header-logo {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 14px rgba(108,63,197,0.35);
+        }
+        .header-logo svg { width: 22px; height: 22px; }
+        .header-brand {
+            font-family: 'Outfit', sans-serif;
+            font-size: 20px; font-weight: 800;
+            color: var(--text-dark); letter-spacing: -0.4px;
+        }
+        .header-brand span {
+            background: linear-gradient(135deg, var(--purple), var(--pink));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .header-center {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .live-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 0 rgba(34,197,94,0.5);
+            animation: pulse-green 2s ease-in-out infinite;
+        }
+        @keyframes pulse-green {
+            0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+            50%      { box-shadow: 0 0 0 6px rgba(34,197,94,0); }
+        }
+        .live-label {
+            font-size: 13px; font-weight: 700;
+            color: #22c55e; letter-spacing: 0.5px;
+        }
+        .header-time {
+            font-family: 'Outfit', sans-serif;
+            font-size: 14px; font-weight: 600;
+            color: var(--text-mid);
+            background: rgba(108,63,197,0.07);
+            padding: 6px 14px; border-radius: 30px;
+            border: 1px solid rgba(108,63,197,0.10);
+        }
+
+        /* ══════════════════ MAIN LAYOUT ══════════════════ */
+        .main-wrap {
+            position: relative; z-index: 1;
+            min-height: calc(100vh - 68px);
+            padding: 40px 48px 60px;
+            display: flex; flex-direction: column; gap: 32px;
+        }
+
+        /* ── 페이지 타이틀 ── */
+        .page-title-row {
+            display: flex; align-items: flex-end; justify-content: space-between;
+        }
+        .page-title {
+            font-family: 'Black Han Sans', 'Outfit', sans-serif;
+            font-size: clamp(28px, 3.5vw, 44px);
+            font-weight: 900; letter-spacing: -1px;
+            background: linear-gradient(135deg, var(--purple-dk) 0%, var(--purple) 45%, var(--pink) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1.1;
+        }
+        .page-subtitle {
+            font-size: 14px; font-weight: 600;
+            color: var(--text-lt); margin-top: 6px;
+            letter-spacing: 0.2px;
+        }
+        .refresh-btn {
+            display: flex; align-items: center; gap: 7px;
+            padding: 10px 20px; border-radius: 40px;
+            font-size: 13px; font-weight: 700;
+            color: var(--purple);
+            background: rgba(108,63,197,0.08);
+            border: 1.5px solid rgba(108,63,197,0.18);
+            cursor: pointer;
+            transition: all .22s ease;
+        }
+        .refresh-btn:hover {
+            background: rgba(108,63,197,0.14);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(108,63,197,0.15);
+        }
+        .refresh-btn svg { transition: transform .5s ease; }
+        .refresh-btn:hover svg { transform: rotate(180deg); }
+
+        /* ══════════════════ BOARD GRID ══════════════════ */
+        .board-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+            flex: 1;
+        }
+
+        /* ── 패널 공통 ── */
+        .board-panel {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            backdrop-filter: blur(18px) saturate(1.3);
+            -webkit-backdrop-filter: blur(18px) saturate(1.3);
+            box-shadow:
+                0 8px 40px rgba(108,63,197,0.10),
+                0 2px 8px  rgba(108,63,197,0.06),
+                inset 0 1px 0 rgba(255,255,255,0.9);
+            overflow: hidden;
+            display: flex; flex-direction: column;
+            min-height: 560px;
+            position: relative;
+        }
+
+        /* 패널 상단 글로우 라인 */
+        .board-panel::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        }
+        .panel-pending::before {
+            background: linear-gradient(90deg, var(--purple), var(--purple-lt), var(--pink));
+        }
+        .panel-done::before {
+            background: linear-gradient(90deg, var(--gold), var(--gold-lt), #fbbf24);
+        }
+
+        /* 내부 배경 미묘한 패턴 */
+        .board-panel::after {
+            content: '';
+            position: absolute; inset: 0; z-index: 0; pointer-events: none;
+            opacity: 0.5;
+        }
+        .panel-pending::after {
+            background:
+                radial-gradient(ellipse 80% 40% at 50% 0%, rgba(180,130,255,0.08) 0%, transparent 60%);
+        }
+        .panel-done::after {
+            background:
+                radial-gradient(ellipse 80% 40% at 50% 0%, rgba(245,166,35,0.06) 0%, transparent 60%);
+        }
+
+        /* ── 패널 헤더 ── */
+        .panel-header {
+            position: relative; z-index: 1;
+            padding: 28px 30px 22px;
+            border-bottom: 1px solid rgba(255,255,255,0.7);
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .panel-header-left {
+            display: flex; align-items: center; gap: 14px;
+        }
+        .panel-icon {
+            width: 50px; height: 50px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            flex-shrink: 0;
+        }
+        .panel-pending .panel-icon {
+            background: linear-gradient(135deg, var(--purple), var(--purple-lt));
+        }
+        .panel-done .panel-icon {
+            background: linear-gradient(135deg, var(--gold), #f7bc4b);
+        }
+        .panel-icon svg { width: 24px; height: 24px; }
+        .panel-title-wrap {}
+        .panel-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px; font-weight: 800; letter-spacing: -0.5px;
+        }
+        .panel-pending .panel-title { color: var(--purple-dk); }
+        .panel-done    .panel-title { color: #8a6000; }
+        .panel-desc {
+            font-size: 12px; font-weight: 600;
+            color: var(--text-lt); margin-top: 3px;
+        }
+
+        /* 카운트 배지 */
+        .count-badge {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px; font-weight: 900;
+            min-width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            letter-spacing: -1px;
+            transition: all .35s ease;
+        }
+        .panel-pending .count-badge {
+            background: linear-gradient(135deg, rgba(108,63,197,0.12), rgba(155,110,232,0.10));
+            color: var(--purple);
+            border: 1.5px solid rgba(108,63,197,0.15);
+        }
+        .panel-done .count-badge {
+            background: linear-gradient(135deg, rgba(245,166,35,0.14), rgba(247,188,75,0.10));
+            color: #a07000;
+            border: 1.5px solid rgba(245,166,35,0.18);
+        }
+
+        /* ── 패널 바디 ── */
+        .panel-body {
+            position: relative; z-index: 1;
+            flex: 1;
+            padding: 20px 24px 24px;
+            display: flex; flex-direction: column; gap: 12px;
+            overflow-y: auto;
+        }
+        .panel-body::-webkit-scrollbar { width: 4px; }
+        .panel-body::-webkit-scrollbar-track { background: transparent; }
+        .panel-body::-webkit-scrollbar-thumb {
+            background: rgba(108,63,197,0.18);
+            border-radius: 4px;
+        }
+
+        /* ── 대기 없을 때 ── */
+        .empty-state {
+            flex: 1;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            gap: 14px; padding: 40px 20px;
+            text-align: center;
+        }
+        .empty-icon-wrap {
+            width: 72px; height: 72px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .panel-pending .empty-icon-wrap {
+            background: rgba(108,63,197,0.08);
+            border: 1.5px dashed rgba(108,63,197,0.25);
+        }
+        .panel-done .empty-icon-wrap {
+            background: rgba(245,166,35,0.08);
+            border: 1.5px dashed rgba(245,166,35,0.30);
+        }
+        .empty-icon-wrap svg { width: 32px; height: 32px; opacity: 0.5; }
+        .empty-title {
+            font-size: 15px; font-weight: 700; color: var(--text-lt);
+        }
+        .empty-sub {
+            font-size: 12px; color: var(--text-lt); opacity: 0.7;
+        }
+
+        /* ══════════════════ ORDER CARDS ══════════════════ */
+        .order-card {
+            border-radius: var(--radius-md);
+            padding: 18px 20px;
+            display: flex; align-items: center; gap: 16px;
+            position: relative; overflow: hidden;
+            transition: transform .22s ease, box-shadow .22s ease;
+            cursor: default;
+            animation: card-in .38s ease both;
+        }
+        @keyframes card-in {
+            from { opacity: 0; transform: translateY(12px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0)   scale(1); }
+        }
+        .order-card:hover {
+            transform: translateY(-2px);
+        }
+
+        /* 대기중 카드 */
+        .card-pending {
+            background: linear-gradient(135deg,
+                rgba(255,255,255,0.75) 0%,
+                rgba(240,232,255,0.60) 100%);
+            border: 1.5px solid rgba(200,170,255,0.35);
+            box-shadow:
+                0 4px 20px rgba(108,63,197,0.09),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .card-pending:hover {
+            box-shadow: 0 8px 30px rgba(108,63,197,0.16);
+        }
+        /* 왼쪽 컬러 바 */
+        .card-pending::before {
+            content: '';
+            position: absolute; left: 0; top: 10px; bottom: 10px;
+            width: 4px; border-radius: 0 4px 4px 0;
+            background: linear-gradient(180deg, var(--purple), var(--purple-lt));
+        }
+        .card-pending { padding-left: 24px; }
+
+        /* 완료 카드 */
+        .card-done {
+            background: linear-gradient(135deg,
+                rgba(255,255,255,0.72) 0%,
+                rgba(255,245,220,0.58) 100%);
+            border: 1.5px solid rgba(245,166,35,0.28);
+            box-shadow:
+                0 4px 20px rgba(245,166,35,0.08),
+                inset 0 1px 0 rgba(255,255,255,0.8);
+        }
+        .card-done:hover {
+            box-shadow: 0 8px 30px rgba(245,166,35,0.16);
+        }
+        .card-done::before {
+            content: '';
+            position: absolute; left: 0; top: 10px; bottom: 10px;
+            width: 4px; border-radius: 0 4px 4px 0;
+            background: linear-gradient(180deg, var(--gold), var(--gold-lt));
+        }
+        .card-done { padding-left: 24px; }
+
+        /* 주문 번호 */
+        .order-num-wrap {
+            flex-shrink: 0;
+        }
+        .order-num {
+            font-family: 'Outfit', sans-serif;
+            font-size: 26px; font-weight: 900;
+            line-height: 1;
+            letter-spacing: -1px;
+            min-width: 52px; height: 52px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .card-pending .order-num {
+            background: linear-gradient(135deg, var(--purple), var(--purple-lt));
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(108,63,197,0.35);
+        }
+        .card-done .order-num {
+            background: linear-gradient(135deg, var(--gold), #f7bc4b);
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(245,166,35,0.40);
+        }
+
+        /* 카드 정보 */
+        .order-info { flex: 1; min-width: 0; }
+        .order-name {
+            font-size: 16px; font-weight: 700;
+            color: var(--text-dark);
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            margin-bottom: 5px;
+        }
+        .order-meta {
+            display: flex; flex-wrap: wrap; gap: 6px;
+        }
+        .meta-tag {
+            font-size: 11px; font-weight: 700;
+            padding: 3px 9px; border-radius: 20px;
+            letter-spacing: 0.2px;
+        }
+        .card-pending .meta-tag {
+            background: rgba(108,63,197,0.10);
+            color: var(--purple);
+            border: 1px solid rgba(108,63,197,0.14);
+        }
+        .card-done .meta-tag {
+            background: rgba(245,166,35,0.12);
+            color: #8a6000;
+            border: 1px solid rgba(245,166,35,0.18);
+        }
+        .meta-time {
+            font-size: 11px; font-weight: 600;
+            color: var(--text-lt);
+        }
+
+        /* 상태 표시 */
+        .order-status {
+            flex-shrink: 0;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 5px;
+        }
+        .status-dot-wrap {
+            display: flex; align-items: center; gap: 5px;
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .card-pending .status-dot {
+            background: var(--purple-lt);
+            box-shadow: 0 0 0 0 rgba(155,110,232,0.5);
+            animation: pulse-purple 2s ease-in-out infinite;
+        }
+        @keyframes pulse-purple {
+            0%,100% { box-shadow: 0 0 0 0 rgba(155,110,232,0.5); }
+            50%      { box-shadow: 0 0 0 5px rgba(155,110,232,0); }
+        }
+        .card-done .status-dot {
+            background: var(--gold);
+        }
+        .status-label {
+            font-size: 10px; font-weight: 800;
+            letter-spacing: 0.5px; text-transform: uppercase;
+        }
+        .card-pending .status-label { color: var(--purple-lt); }
+        .card-done    .status-label { color: #a07000; }
+
+        /* 완료 체크 아이콘 */
+        .done-check {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--gold), var(--gold-lt));
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 3px 10px rgba(245,166,35,0.35);
+        }
+        .done-check svg { width: 16px; height: 16px; }
+
+        /* ── 스켈레톤 로딩 ── */
+        .skeleton-card {
+            border-radius: var(--radius-md);
+            padding: 18px 24px;
+            background: rgba(255,255,255,0.45);
+            border: 1.5px solid rgba(255,255,255,0.6);
+            display: flex; align-items: center; gap: 16px;
+            overflow: hidden;
+        }
+        .skel-num {
+            width: 52px; height: 52px; border-radius: 14px;
+            background: linear-gradient(90deg, rgba(200,180,240,0.25) 25%, rgba(220,200,255,0.40) 50%, rgba(200,180,240,0.25) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            flex-shrink: 0;
+        }
+        .skel-info { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .skel-line {
+            height: 12px; border-radius: 6px;
+            background: linear-gradient(90deg, rgba(200,180,240,0.25) 25%, rgba(220,200,255,0.40) 50%, rgba(200,180,240,0.25) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        .skel-line.short { width: 55%; }
+        .skel-line.xshort { width: 35%; }
+        @keyframes shimmer {
+            0%   { background-position: -200% 0; }
+            100% { background-position:  200% 0; }
+        }
+
+        /* ══════════════════ 하단 요약 바 ══════════════════ */
+        .summary-bar {
+            background: var(--card-bg);
+            border: 1.5px solid var(--card-border);
+            border-radius: var(--radius-md);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            box-shadow:
+                0 4px 24px rgba(108,63,197,0.09),
+                inset 0 1px 0 rgba(255,255,255,0.85);
+            padding: 16px 32px;
+            display: flex; align-items: center;
+            justify-content: space-between; gap: 20px;
+        }
+        .summary-item {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .summary-icon {
+            width: 36px; height: 36px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .summary-icon.purple-bg {
+            background: linear-gradient(135deg, rgba(108,63,197,0.14), rgba(155,110,232,0.10));
+        }
+        .summary-icon.gold-bg {
+            background: linear-gradient(135deg, rgba(245,166,35,0.14), rgba(247,188,75,0.10));
+        }
+        .summary-icon svg { width: 18px; height: 18px; }
+        .summary-text {}
+        .summary-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 22px; font-weight: 900;
+            letter-spacing: -0.8px;
+            line-height: 1;
+        }
+        .purple-val { color: var(--purple); }
+        .gold-val   { color: #b37a00; }
+        .summary-lbl {
+            font-size: 11px; font-weight: 700;
+            color: var(--text-lt); margin-top: 2px;
+        }
+        .summary-divider {
+            width: 1px; height: 36px;
+            background: rgba(108,63,197,0.12);
+        }
+        .summary-right {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; font-weight: 600; color: var(--text-lt);
+        }
+        .summary-right svg { width: 14px; height: 14px; }
+
+        /* ══════════════════ 번호표 강조 (최신 대기) ══════════════════ */
+        .order-card.highlight-new {
+            animation: card-in .38s ease both, glow-pulse 1.5s ease 0.38s 3;
+        }
+        @keyframes glow-pulse {
+            0%,100% { box-shadow: 0 4px 20px rgba(108,63,197,0.09); }
+            50%      { box-shadow: 0 4px 36px rgba(108,63,197,0.28), 0 0 0 2px rgba(155,110,232,0.20); }
+        }
+
+        /* ══════════════════ RESPONSIVE ══════════════════ */
+        @media (max-width: 900px) {
+            header { padding: 0 20px; }
+            .main-wrap { padding: 24px 20px 40px; }
+            .board-grid { grid-template-columns: 1fr; gap: 20px; }
+            .board-panel { min-height: 320px; }
+            .summary-bar { flex-wrap: wrap; gap: 12px; }
+        }
+
+        /* ══════════════════ 마퀴(상단 알림띠) ══════════════════ */
+        .ticker-bar {
+            position: relative; z-index: 1;
+            overflow: hidden;
+            background: linear-gradient(90deg, rgba(108,63,197,0.09), rgba(232,111,176,0.07));
+            border: 1px solid rgba(200,170,255,0.28);
+            border-radius: 40px;
+            padding: 9px 20px;
+            display: flex; align-items: center; gap: 12px;
+        }
+        .ticker-label {
+            font-size: 11px; font-weight: 800;
+            color: var(--purple); white-space: nowrap;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            background: rgba(108,63,197,0.10);
+            padding: 3px 10px; border-radius: 20px;
+            border: 1px solid rgba(108,63,197,0.15);
+            flex-shrink: 0;
+        }
+        .ticker-scroll {
+            overflow: hidden; flex: 1;
+        }
+        .ticker-text {
+            font-size: 12px; font-weight: 600; color: var(--text-mid);
+            white-space: nowrap;
+            animation: ticker-move 20s linear infinite;
+            display: inline-block;
+        }
+        @keyframes ticker-move {
+            0%   { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header>
+    <div class="header-left">
+        <div class="header-logo">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M8 3L4 9H20L16 3H8Z" stroke="white" stroke-width="1.8" stroke-linejoin="round" fill="rgba(255,255,255,0.2)"/>
+                <path d="M4 9L12 21L20 9" stroke="white" stroke-width="1.8" stroke-linejoin="round"/>
+                <path d="M9 13H15" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <div>
+            <div class="header-brand">ADC <span>Rokey Bar</span></div>
+        </div>
+    </div>
+
+    <div class="header-center">
+        <div class="live-dot"></div>
+        <span class="live-label">LIVE</span>
+    </div>
+
+    <div class="header-time" id="header-clock">--:--:--</div>
+</header>
+
+<!-- ══ MAIN ══ -->
+<div class="main-wrap">
+
+    <!-- 타이틀 행 -->
+    <div class="page-title-row">
+        <div>
+            <div class="page-title">주문 대기현황판</div>
+            <div class="page-subtitle">실시간으로 주문 상태가 업데이트됩니다</div>
+        </div>
+        <button class="refresh-btn" onclick="manualRefresh()">
+            <svg id="refresh-icon" viewBox="0 0 24 24" fill="none" width="16" height="16" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 12C21 16.97 16.97 21 12 21C7.03 21 3 16.97 3 12C3 7.03 7.03 3 12 3C14.5 3 16.76 4.01 18.4 5.65L21 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M21 3V8H16" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            새로고침
+        </button>
+    </div>
+
+    <!-- 알림 티커 -->
+    <div class="ticker-bar">
+        <span class="ticker-label">NOTICE</span>
+        <div class="ticker-scroll">
+            <span class="ticker-text" id="ticker-msg">
+                ADC Rokey Bar 에 오신 것을 환영합니다 &nbsp;&nbsp;|&nbsp;&nbsp; 번호를 확인하시고 주문이 완료되면 카운터에서 수령해 주세요 &nbsp;&nbsp;|&nbsp;&nbsp; 대기 번호가 완료 목록에 나타나면 바로 수령 가능합니다
+            </span>
+        </div>
+    </div>
+
+    <!-- 보드 그리드 -->
+    <div class="board-grid">
+
+        <!-- 대기중 패널 -->
+        <div class="board-panel panel-pending">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <div class="panel-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="9" stroke="white" stroke-width="2"/>
+                            <path d="M12 7V12L15 15" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="panel-title-wrap">
+                        <div class="panel-title">주문 대기중</div>
+                        <div class="panel-desc">현재 제조 중인 주문</div>
+                    </div>
+                </div>
+                <div class="count-badge" id="pending-count">0</div>
+            </div>
+            <div class="panel-body" id="pending-body">
+                <!-- 스켈레톤 로딩 -->
+                <div class="skeleton-card">
+                    <div class="skel-num"></div>
+                    <div class="skel-info">
+                        <div class="skel-line"></div>
+                        <div class="skel-line short"></div>
+                        <div class="skel-line xshort"></div>
+                    </div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skel-num"></div>
+                    <div class="skel-info">
+                        <div class="skel-line"></div>
+                        <div class="skel-line short"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 완료 패널 -->
+        <div class="board-panel panel-done">
+            <div class="panel-header">
+                <div class="panel-header-left">
+                    <div class="panel-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="12" cy="12" r="9" stroke="white" stroke-width="2"/>
+                            <path d="M8 12L10.5 14.5L16 9" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="panel-title-wrap">
+                        <div class="panel-title">주문 완료</div>
+                        <div class="panel-desc">최근 완료된 주문 (최신 5건)</div>
+                    </div>
+                </div>
+                <div class="count-badge" id="done-count">0</div>
+            </div>
+            <div class="panel-body" id="done-body">
+                <div class="skeleton-card">
+                    <div class="skel-num"></div>
+                    <div class="skel-info">
+                        <div class="skel-line"></div>
+                        <div class="skel-line short"></div>
+                    </div>
+                </div>
+                <div class="skeleton-card">
+                    <div class="skel-num"></div>
+                    <div class="skel-info">
+                        <div class="skel-line"></div>
+                        <div class="skel-line xshort"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 요약 바 -->
+    <div class="summary-bar">
+        <div class="summary-item">
+            <div class="summary-icon purple-bg">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="9" stroke="#6c3fc5" stroke-width="2"/>
+                    <path d="M12 7V12L15 15" stroke="#6c3fc5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="summary-text">
+                <div class="summary-val purple-val" id="sum-pending">0</div>
+                <div class="summary-lbl">대기중</div>
+            </div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+            <div class="summary-icon gold-bg">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="9" stroke="#f5a623" stroke-width="2"/>
+                    <path d="M8 12L10.5 14.5L16 9" stroke="#f5a623" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+            <div class="summary-text">
+                <div class="summary-val gold-val" id="sum-done">0</div>
+                <div class="summary-lbl">완료 (표시)</div>
+            </div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-right">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22Z" stroke="#8a7aaa" stroke-width="1.8"/>
+                <path d="M12 8V12" stroke="#8a7aaa" stroke-width="1.8" stroke-linecap="round"/>
+                <circle cx="12" cy="16" r="0.8" fill="#8a7aaa"/>
+            </svg>
+            <span id="last-updated">마지막 업데이트: --</span>
+        </div>
+    </div>
+
+</div>
+
+<!-- ══ SCRIPTS ══ -->
+<script>
+    /* ── 시계 ── */
+    function updateClock() {
+        const now = new Date();
+        const h = String(now.getHours()).padStart(2,'0');
+        const m = String(now.getMinutes()).padStart(2,'0');
+        const s = String(now.getSeconds()).padStart(2,'0');
+        document.getElementById('header-clock').textContent = h + ':' + m + ':' + s;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+
+    /* ── 상태 저장 ── */
+    let pendingOrders = [];
+    let doneOrders    = [];
+
+    /* ── 시간 포맷 ── */
+    function fmtTime(ts) {
+        if (!ts) return '';
+        let d;
+        if (ts.toDate) d = ts.toDate();
+        else if (ts instanceof Date) d = ts;
+        else d = new Date(ts);
+        const h = String(d.getHours()).padStart(2,'0');
+        const m = String(d.getMinutes()).padStart(2,'0');
+        return h + ':' + m;
+    }
+
+    /* ── 대기중 카드 HTML ── */
+    function renderPendingCard(doc, idx) {
+        const d    = doc.data ? doc.data() : doc;
+        const id   = doc.id || '';
+        const num  = d.order_num !== undefined ? d.order_num : (idx + 1);
+        const name = d.cocktail_name || d.name || d.menu || d.item || '주문 #' + num;
+        const qty  = d.quantity || d.qty || d.count || '';
+        const time = fmtTime(d.timestamp || d.created_at || d.order_time || null);
+        const isNew = idx === 0 ? ' highlight-new' : '';
+
+        const metaTags = [];
+        if (qty) metaTags.push('<span class="meta-tag">x' + qty + '</span>');
+        if (d.status) metaTags.push('<span class="meta-tag">' + escHtml(d.status) + '</span>');
+        if (d.option || d.options) metaTags.push('<span class="meta-tag">' + escHtml(d.option || d.options) + '</span>');
+
+        return `
+        <div class="order-card card-pending${isNew}" style="animation-delay:${idx * 0.06}s">
+            <div class="order-num-wrap">
+                <div class="order-num">${num}</div>
+            </div>
+            <div class="order-info">
+                <div class="order-name">${escHtml(name)}</div>
+                <div class="order-meta">
+                    ${metaTags.join('')}
+                    ${time ? '<span class="meta-time">' + time + '</span>' : ''}
+                </div>
+            </div>
+            <div class="order-status">
+                <div class="status-dot-wrap">
+                    <div class="status-dot"></div>
+                    <span class="status-label">대기</span>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    /* ── 완료 카드 HTML ── */
+    function renderDoneCard(doc, idx) {
+        const d    = doc.data ? doc.data() : doc;
+        const num  = d.order_num !== undefined ? d.order_num : '?';
+        const name = d.cocktail_name || d.name || d.menu || d.item || '주문 #' + num;
+        const qty  = d.quantity || d.qty || d.count || '';
+        const time = fmtTime(d.completed_at || d.timestamp || d.order_time || null);
+
+        const metaTags = [];
+        if (qty) metaTags.push('<span class="meta-tag">x' + qty + '</span>');
+        if (d.option || d.options) metaTags.push('<span class="meta-tag">' + escHtml(d.option || d.options) + '</span>');
+
+        return `
+        <div class="order-card card-done" style="animation-delay:${idx * 0.06}s">
+            <div class="order-num-wrap">
+                <div class="order-num">${num}</div>
+            </div>
+            <div class="order-info">
+                <div class="order-name">${escHtml(name)}</div>
+                <div class="order-meta">
+                    ${metaTags.join('')}
+                    ${time ? '<span class="meta-time">' + time + '</span>' : ''}
+                </div>
+            </div>
+            <div class="order-status">
+                <div class="done-check">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 12L10 17L19 8" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="status-label" style="color:#a07000">완료</span>
+            </div>
+        </div>`;
+    }
+
+    /* ── XSS 방지 ── */
+    function escHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g,'&amp;')
+            .replace(/</g,'&lt;')
+            .replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;');
+    }
+
+    /* ── 빈 상태 HTML ── */
+    function emptyPending() {
+        return `<div class="empty-state">
+            <div class="empty-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="9" stroke="#6c3fc5" stroke-width="1.8"/>
+                    <path d="M12 7V12L15 15" stroke="#6c3fc5" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="empty-title">현재 대기중인 주문이 없습니다</div>
+            <div class="empty-sub">새로운 주문이 들어오면 여기에 표시됩니다</div>
+        </div>`;
+    }
+    function emptyDone() {
+        return `<div class="empty-state">
+            <div class="empty-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="12" cy="12" r="9" stroke="#f5a623" stroke-width="1.8"/>
+                    <path d="M8 12L10.5 14.5L16 9" stroke="#f5a623" stroke-width="1.8" stroke-linecap="round"/>
+                </svg>
+            </div>
+            <div class="empty-title">완료된 주문이 없습니다</div>
+            <div class="empty-sub">주문이 완료되면 여기에 표시됩니다</div>
+        </div>`;
+    }
+
+    /* ── 업데이트 시간 표시 ── */
+    function setUpdatedTime() {
+        const now = new Date();
+        const h   = String(now.getHours()).padStart(2,'0');
+        const m   = String(now.getMinutes()).padStart(2,'0');
+        const s   = String(now.getSeconds()).padStart(2,'0');
+        document.getElementById('last-updated').textContent = '마지막 업데이트: ' + h + ':' + m + ':' + s;
+    }
+
+    /* ══════════════════════════════
+       FIREBASE 실시간 구독
+    ══════════════════════════════ */
+
+    /* ── 대기중: coctail_web 컬렉션 전체 실시간 ── */
+    db.collection('cocktail_web')
+        .onSnapshot(function(snapshot) {
+            const body  = document.getElementById('pending-body');
+            const count = document.getElementById('pending-count');
+            const sum   = document.getElementById('sum-pending');
+
+            if (snapshot.empty) {
+                body.innerHTML = emptyPending();
+                count.textContent = '0';
+                sum.textContent   = '0';
+                setUpdatedTime();
+                return;
+            }
+
+            // order_num 기준 정렬 (없으면 문서 순)
+            const docs = [];
+            snapshot.forEach(function(doc) { docs.push(doc); });
+            docs.sort(function(a, b) {
+                const na = a.data().order_num !== undefined ? Number(a.data().order_num) : 99999;
+                const nb = b.data().order_num !== undefined ? Number(b.data().order_num) : 99999;
+                return na - nb;
+            });
+
+            body.innerHTML = docs.map(function(doc, i) {
+                return renderPendingCard(doc, i);
+            }).join('');
+
+            count.textContent = docs.length;
+            sum.textContent   = docs.length;
+            setUpdatedTime();
+        }, function(err) {
+            console.error('coctail_web 오류:', err);
+            document.getElementById('pending-body').innerHTML =
+                '<div class="empty-state"><div class="empty-title">데이터 로드 실패</div><div class="empty-sub">' + err.message + '</div></div>';
+        });
+
+    /* ── 완료: history 컬렉션 order_num 내림차순 상위 5개 실시간 ── */
+    db.collection('history')
+        .orderBy('order_num', 'desc')
+        .limit(5)
+        .onSnapshot(function(snapshot) {
+            const body  = document.getElementById('done-body');
+            const count = document.getElementById('done-count');
+            const sum   = document.getElementById('sum-done');
+
+            if (snapshot.empty) {
+                body.innerHTML = emptyDone();
+                count.textContent = '0';
+                sum.textContent   = '0';
+                setUpdatedTime();
+                return;
+            }
+
+            const docs = [];
+            snapshot.forEach(function(doc) { docs.push(doc); });
+
+            body.innerHTML = docs.map(function(doc, i) {
+                return renderDoneCard(doc, i);
+            }).join('');
+
+            count.textContent = docs.length;
+            sum.textContent   = docs.length;
+            setUpdatedTime();
+        }, function(err) {
+            console.error('history 오류:', err);
+            document.getElementById('done-body').innerHTML =
+                '<div class="empty-state"><div class="empty-title">데이터 로드 실패</div><div class="empty-sub">' + err.message + '</div></div>';
+        });
+
+    /* ── 수동 새로고침 (스냅샷은 자동 실시간이므로 UI 효과만) ── */
+    function manualRefresh() {
+        const icon = document.getElementById('refresh-icon');
+        icon.style.transition = 'transform 0.5s ease';
+        icon.style.transform  = 'rotate(360deg)';
+        setTimeout(function() { icon.style.transform = ''; }, 550);
+        setUpdatedTime();
+    }
+</script>
+
+</body>
+</html>
