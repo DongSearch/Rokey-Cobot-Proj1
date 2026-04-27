@@ -106,6 +106,12 @@ subgraph External_Force_Flow
 end
 ```
 
+
+
+<video src="위에서_생성된_영상_링크_주소" width="100%" controls autoplay loop muted>
+  Your browser does not support the video tag.
+</video>
+
 ### Exception2
 ```mermaid
 flowchart TD
@@ -114,6 +120,10 @@ flowchart TD
     B --> C[Receive Emergency Release Signal]
     C --> D[Send Resume Operation Signal]
 ```
+
+| Exception1 | Exception2 |
+| :---: | :---: |
+| <video src="https://github.com/user-attachments/assets/b8f9959f-87d2-4542-a5b0-6e96ada9a247" width="100%"></video> | <video src="https://github.com/user-attachments/assets/ae4670a9-82ec-4ccf-8e2e-55ce38e423ec" width="100%"></video> |
 
 ### order(WEB)
 ```mermaid
