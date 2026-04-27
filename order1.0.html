@@ -650,7 +650,40 @@
 
     <div class="header-time" id="header-clock">--:--:--</div>
 </header>
+<!-- 🚨 비상 알림 팝업 -->
+<div id="emergency-popup" style="
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+">
+    <div style="
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        text-align: center;
+        width: 320px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    ">
+        <h2 style="color:#e11d48; margin-bottom:10px;">🚨 비상 상태</h2>
+        <p style="margin-bottom:20px;">로봇이 정지되었습니다</p>
 
+        <button onclick="releaseEmergency()" style="
+            padding: 12px 20px;
+            border-radius: 10px;
+            border: none;
+            background: #22c55e;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        ">
+            비상정지 해제
+        </button>
+    </div>
+</div>
 <!-- ══ MAIN ══ -->
 <div class="main-wrap">
 
@@ -1023,6 +1056,33 @@
         setTimeout(function() { icon.style.transform = ''; }, 550);
         setUpdatedTime();
     }
+/* 🚨 cocktail_robot 상태 감지 */
+db.collection('cocktail_robot')
+  .doc('status')
+  .onSnapshot(function(doc) {
+      if (!doc.exists) return;
+
+      const data = doc.data();
+
+      if (data.emergency === true) {
+          document.getElementById('emergency-popup').style.display = 'flex';
+      } else {
+          document.getElementById('emergency-popup').style.display = 'none';
+      }
+    });
+function releaseEmergency() {
+    db.collection('cocktail_robot')
+      .doc('status')
+      .update({
+          emergency_release: true
+      })
+      .then(function() {
+          document.getElementById('emergency-popup').style.display = 'none';
+      })
+      .catch(function(err) {
+          alert('해제 실패: ' + err.message);
+      });
+}
 </script>
 
 </body>
